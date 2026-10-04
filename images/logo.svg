@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240" role="img" aria-label="The Hatch — bolted porthole mark">
+  <title>The Hatch — Bolted Porthole</title>
+  <!-- 01 · A sealed submarine/bunker hatch: outer rim, rivets, latch wheel. The most literal mark. -->
+  <g fill="none" stroke="#f5e003" stroke-width="9">
+    <circle cx="120" cy="120" r="92"/>
+    <circle cx="120" cy="120" r="62"/>
+  </g>
+  <!-- rivets every 45° on the rim -->
+  <g fill="#f5e003">
+    <circle cx="120" cy="22"  r="7"/>
+    <circle cx="189" cy="51"  r="7"/>
+    <circle cx="218" cy="120" r="7"/>
+    <circle cx="189" cy="189" r="7"/>
+    <circle cx="120" cy="218" r="7"/>
+    <circle cx="51"  cy="189" r="7"/>
+    <circle cx="22"  cy="120" r="7"/>
+    <circle cx="51"  cy="51"  r="7"/>
+  </g>
+  <!-- central latch / wheel handle -->
+  <g fill="#f5e003">
+    <rect x="112" y="78" width="16" height="84" rx="8"/>
+    <rect x="78" y="112" width="84" height="16" rx="8"/>
+    <circle cx="120" cy="120" r="13" fill="#000"/>
+    <circle cx="120" cy="120" r="13" fill="none" stroke="#f5e003" stroke-width="6"/>
+  </g>
+</svg>

@@ -1,0 +1,273 @@
+/* The Hatch - the design system, from the approved preview (the-hatch-preview:
+   theme.css and community.css, the "Community" direction).
+
+   COLOUR: pure black ground, near-black panels, hairline greys, warm
+   off-white ink and acid yellow (#f5e003) as the one signal colour; black
+   ink on yellow. Values come from the look's palette (palette.js) as
+   --chime-*; the extra steps are below. Dark only.
+
+   TYPE: Anton, upper case, for display; Inter for words; JetBrains Mono,
+   upper case and tracked, for labels, times and tags.
+
+   SHAPE: hard corners (3px, 2px small), round only for play buttons, tags
+   and pills. A faint film grain over everything. Where the preview shows
+   artwork, the station logo on black until the real artwork exists.
+
+   Scoped to #app so it comes after the framework's own sheet. */
+
+@font-face { font-family: "Anton"; src: url("fonts/Anton.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Inter"; src: url("fonts/Inter.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "JetBrains Mono"; src: url("fonts/JetBrainsMono-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "JetBrains Mono"; src: url("fonts/JetBrainsMono-600.woff2") format("woff2"); font-weight: 600; font-display: swap; }
+
+/* ---- tokens ---- */
+html, body { margin: 0; background: #000; color: #f5f5ef; }
+#app {
+  --display: "Anton", "Impact", sans-serif;
+  --body: "Inter", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+  --muted: #7f7f75;
+  --bg-2: #070707;
+  --radius: 3px; --radius-s: 2px;
+  --player: 4.5rem; /* the docked player bar's height */
+  --wide: 76rem;
+  min-height: 100vh;
+}
+
+/* film grain, as the preview has it */
+body::after {
+  content: ""; position: fixed; inset: 0; z-index: 9000; pointer-events: none; opacity: 0.06;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---- the page ---- */
+#app.chime-look { font-family: var(--body); font-size: 1rem; line-height: 1.45; color: var(--chime-ink); background: var(--chime-ground); }
+#app .chime-app { max-width: none; padding: 0; gap: 0; min-height: 100vh; }
+#app .chime-stack { grid-template-columns: minmax(0, 1fr); padding: 1.5rem clamp(1rem, 4vw, 2.5rem) calc(var(--player) + 2.5rem); width: 100%; max-width: var(--wide); margin: 0 auto; }
+#app .chime-screen { gap: 1.5rem; }
+#app .chime-text { overflow: visible; white-space: normal; }
+#app .chime-pressable { border-radius: var(--radius-s); }
+#app .chime-pressable:focus-visible, #app .chime-hyperlink:focus-visible { outline: 2px solid var(--chime-accent); outline-offset: 2px; }
+
+/* ---- type ---- */
+#app .PageTitle, #app .OnAirTitle, #app .Wordmark { font-family: var(--display); font-weight: 400; text-transform: uppercase; letter-spacing: 0.01em; line-height: 1.02; }
+#app .PageTitle { font-size: clamp(2.5rem, 7vw, 4.5rem); }
+#app .Lead { font-size: 1.05rem; color: var(--chime-ink-soft); max-width: 60ch; line-height: 1.6; }
+#app .Tag { font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 0.2rem 0.5rem; border: 1px solid var(--chime-edge); border-radius: 99px; color: var(--chime-ink-soft); }
+#app .Live { display: inline-flex; align-items: center; gap: 0.4rem; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--chime-accent); }
+#app .Live::before { content: ""; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--chime-accent); animation: hatch-pulse 1.8s infinite; }
+@keyframes hatch-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--chime-accent) 70%, transparent); }
+  70% { box-shadow: 0 0 0 7px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+@media (prefers-reduced-motion: reduce) { #app .Live::before { animation: none; } }
+
+/* where artwork goes: the station logo on black until the real artwork exists (site.js, artwork) */
+#app .Artwork { position: relative; display: grid; place-items: center; align-content: center; gap: 0.75rem; padding: 1rem; background: #000; border: 1px solid var(--chime-edge); overflow: hidden; }
+#app .ArtworkLogo { width: min(45%, 9rem); height: auto; }
+#app .Cover .ArtworkLogo { width: 70%; }
+#app .Cover { padding: 0; }
+#app .PlaceholderNote { font-family: var(--mono); font-size: 0.65rem; line-height: 1.5; letter-spacing: 0.02em; color: var(--muted); text-align: center; max-width: 30ch; }
+
+/* ---- the top navigation ---- */
+#app .TopNav { position: sticky; top: 0; z-index: 5; gap: 1.1rem; padding: 0.7rem clamp(1rem, 4vw, 2.5rem); background: color-mix(in srgb, var(--bg-2) 88%, transparent); backdrop-filter: blur(14px); border-bottom: 1px solid var(--chime-edge); }
+#app .chime-pressable.Mark { background: none; border: 0; padding: 0; min-height: 2.5rem; gap: 0.55rem; }
+#app .MarkImage { width: 1.9rem; height: 1.9rem; }
+#app .Wordmark { font-size: 1.3rem; color: var(--chime-ink); }
+#app .Nav { gap: 0.25rem; overflow-x: auto; scrollbar-width: none; }
+#app .Nav::-webkit-scrollbar { display: none; }
+#app .chime-pressable.NavLink { background: none; border: 0; border-radius: 99px; min-height: 2.25rem; padding: 0.35rem 0.75rem; color: var(--chime-ink-soft); font-size: 0.85rem; white-space: nowrap; }
+#app .chime-pressable.NavLink:hover { color: var(--chime-ink); background: var(--chime-lit); }
+#app .chime-pressable.NavLink.chime-current { background: var(--chime-lit); color: var(--chime-ink); font-weight: 600; }
+
+/* ---- play buttons: an icon, the words kept for a reader who can't see it ---- */
+#app .PlayButtons { gap: 0; flex: none; }
+#app .chime-pressable.PlayButton, #app .chime-pressable.BigPlay { background: var(--chime-accent); color: #000; border: 0; border-radius: 50%; padding: 0; justify-content: center; position: relative; flex: none; }
+#app .chime-pressable.PlayButton { width: 2.75rem; height: 2.75rem; min-height: 0; }
+#app .chime-pressable.BigPlay { width: 3.5rem; height: 3.5rem; min-height: 0; }
+#app .chime-pressable.PlayButton:hover, #app .chime-pressable.BigPlay:hover { background: var(--chime-accent-2); }
+#app .PlayButton .Face, #app .BigPlay .Face, #app .PlayButton .Reason, #app .BigPlay .Reason { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+#app .Plays::before { content: ""; margin-left: 0.2em; border-style: solid; border-width: 0.5em 0 0.5em 0.85em; border-color: transparent transparent transparent #000; }
+#app .Stops::before { content: ""; width: 0.8em; height: 0.8em; background: #000; border-radius: 1px; }
+#app .BigPlay { font-size: 1.3rem; }
+
+/* ---- the player bar, docked under every screen ---- */
+#app .PlayerBar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; height: var(--player); gap: 0.85rem; padding: 0 clamp(1rem, 4vw, 2.5rem); background: var(--bg-2); border-top: 1px solid var(--chime-edge); }
+#app .Cover { width: 2.75rem; height: 2.75rem; border-radius: var(--radius-s); flex: none; }
+#app .PlayerWords { gap: 0.1rem; }
+#app .PlayerNow { font-weight: 700; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#app .PlayerLine { gap: 0.6rem; flex-wrap: nowrap; min-width: 0; }
+#app .PlayerState { flex: none; white-space: nowrap; }
+#app .PlayerState { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--chime-accent); }
+#app .PlayerProblem { font-size: 0.75rem; color: var(--chime-warn); }
+
+/* ---- home: on air ---- */
+#app .OnAir { display: grid; grid-template-columns: minmax(0, 15rem) 1fr; gap: 1.25rem; padding: 1rem; background: var(--chime-raised); border: 1px solid var(--chime-edge); border-radius: var(--radius); align-items: center; }
+#app .OnAirArt { aspect-ratio: 1; border-radius: var(--radius-s); }
+#app .OnAirWords { gap: 0.6rem; }
+#app .OnAirTags { gap: 0.6rem; }
+#app .OnAirTitle { font-size: clamp(2rem, 5vw, 3.25rem); }
+#app .OnAirLine { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--chime-ink-soft); }
+#app .OnAirControls { gap: 0.9rem; margin-top: 0.3rem; }
+#app .OnAirCount { font-size: 0.8rem; color: var(--chime-ink-soft); }
+
+#app .OnAirHost { font-size: 0.95rem; color: var(--chime-ink); }
+#app .OnAirTrack { font-size: 0.85rem; color: var(--chime-ink-soft); }
+#app .ArtworkStandIn { align-items: center; gap: 0.75rem; }
+#app .ArtworkPicture { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+#app .PlayerShow { min-width: 0; flex: 0 1 auto; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--chime-ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---- sections, lists of shows, tags ---- */
+#app .Section { gap: 0.6rem; }
+#app .SectionHead { gap: 1rem; }
+#app .SectionTitle { font-weight: 800; font-size: 1rem; }
+#app .chime-pressable.More { background: none; border: 0; min-height: 2rem; padding: 0; color: var(--chime-accent); font-size: 0.85rem; font-weight: 600; }
+#app .ShowList { gap: 0.45rem; }
+#app .ShowRow { gap: 1rem; align-items: center; padding: 0.7rem 0.9rem; background: var(--chime-raised); border: 1px solid var(--chime-edge); border-radius: var(--radius-s); }
+#app .ShowRow:has(.Live) { border-color: var(--chime-accent); }
+#app .ShowTime { font-family: var(--mono); font-size: 0.8rem; color: var(--chime-ink); flex: none; min-width: 7.5rem; }
+#app .ShowWords { gap: 0.2rem; }
+#app .ShowTitle { font-weight: 700; font-size: 0.95rem; }
+#app .ShowWho { font-size: 0.8rem; color: var(--chime-ink-soft); }
+#app .chime-column > .Tag, #app .chime-each > .Tag { align-self: flex-start; }
+#app .Tags { gap: 0.35rem; flex-wrap: wrap; }
+#app .Tags:empty { display: none; }
+#app .Quiet { color: var(--chime-ink-soft); font-size: 0.9rem; }
+#app .Problem { color: var(--chime-warn); }
+#app .Trouble { gap: 0.6rem; align-items: flex-start; }
+#app .chime-pressable.SecondaryButton { background: transparent; color: var(--chime-ink); border: 1px solid var(--chime-edge); font-weight: 600; font-size: 0.9rem; }
+#app .chime-pressable.SecondaryButton:hover { border-color: var(--chime-ink-soft); }
+
+#app .Tag.Solid { background: var(--chime-accent); color: #000; border-color: transparent; font-weight: 600; }
+
+/* ---- the DJs ---- */
+#app .DjGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0.8rem; }
+#app .chime-pressable.DjCard { flex-direction: column; align-items: stretch; gap: 0; padding: 0; background: var(--chime-raised); border: 1px solid var(--chime-edge); border-radius: var(--radius); overflow: hidden; }
+#app .chime-pressable.DjCard:hover { border-color: var(--chime-accent); background: var(--chime-raised); }
+#app .DjCardArt { aspect-ratio: 16 / 10; border: 0; border-bottom: 1px solid var(--chime-edge); }
+#app .DjCardArt .ArtworkLogo { width: 4rem; }
+#app .DjCardWords { gap: 0.25rem; padding: 0.75rem 0.9rem 0.9rem; }
+#app .DjNameRow { gap: 0.6rem; flex-wrap: wrap; }
+#app .DjName { font-weight: 800; font-size: 1.05rem; }
+#app .DjGenres { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--chime-ink-soft); }
+#app .DjNext { font-size: 0.8rem; color: var(--chime-accent); }
+#app .DjLinks { gap: 0.9rem; flex-wrap: wrap; }
+#app .DjLink, #app .ListenLink { color: var(--chime-accent); font-weight: 600; font-size: 0.9rem; text-decoration: none; }
+#app .ListenLink { flex: none; border: 1px solid var(--chime-accent); border-radius: 99px; padding: 0.35rem 0.9rem; }
+#app .ListenLink:hover { background: var(--chime-accent); color: #000; }
+#app .Filters { flex-wrap: wrap; overflow: visible; }
+#app .ListState:empty, #app .ListState:not(:has(.chime-text)) { display: none; }
+
+/* ---- the schedule ---- */
+#app .PageHead { gap: 0.3rem; }
+#app .Days { gap: 0.4rem; overflow-x: auto; scrollbar-width: none; padding-bottom: 0.2rem; }
+#app .Days::-webkit-scrollbar { display: none; }
+#app .chime-pressable.DayChoice { flex: none; background: transparent; border: 1px solid var(--chime-edge); border-radius: 99px; min-height: 2.25rem; padding: 0.3rem 0.9rem; font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--chime-ink-soft); }
+#app .chime-pressable.DayChoice.chime-current { background: var(--chime-accent); color: #000; border-color: transparent; font-weight: 600; }
+
+/* ---- buttons ---- */
+#app .chime-pressable.PrimaryButton { background: var(--chime-accent); color: #000; border: 0; font-weight: 700; font-size: 0.9rem; }
+#app .chime-pressable.PrimaryButton:hover { background: var(--chime-accent-2); }
+#app .chime-pressable.PrimaryButton .Reason { color: #000; }
+#app .chime-pressable.DangerButton { background: transparent; color: var(--chime-warn); border: 1px solid var(--chime-warn); font-weight: 600; font-size: 0.9rem; }
+#app .chime-pressable.SignIn { flex: none; background: var(--chime-accent); color: #000; border: 0; border-radius: 99px; min-height: 2.25rem; padding: 0.35rem 1rem; font-weight: 700; font-size: 0.85rem; }
+#app .chime-pressable.SignIn:hover { background: var(--chime-accent-2); }
+#app .chime-pressable.SignIn.chime-current { box-shadow: 0 0 0 2px var(--chime-ink); }
+#app .Actions { gap: 0.6rem; flex-wrap: wrap; }
+#app .Notice { color: var(--chime-accent); font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase; }
+#app .Kicker, #app .Label { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--chime-ink-soft); }
+
+/* ---- the account and the admin ---- */
+#app .SignInCard { display: flex; flex-direction: column; gap: 0.9rem; max-width: 34rem; padding: 1.5rem; background: var(--chime-raised); border: 1px solid var(--chime-edge); border-radius: var(--radius); align-items: flex-start; }
+#app .GoogleButton { padding: 0; min-height: 44px; }
+#app .Manager { gap: 0.9rem; }
+#app .AdminHead { gap: 1rem; align-items: flex-end; flex-wrap: wrap; }
+#app .Who { gap: 0.4rem; align-items: flex-end; }
+#app .WeekNav { gap: 0.6rem; }
+#app .WeekWords { text-align: center; font-weight: 700; }
+#app .ShowActions { gap: 0.4rem; flex: none; }
+#app .ShowActions .chime-pressable { min-height: 2.25rem; padding: 0.3rem 0.8rem; font-size: 0.8rem; }
+#app .Form { display: flex; flex-direction: column; gap: 0.8rem; padding: 1.25rem; background: var(--chime-raised); border: 1px solid var(--chime-accent); border-radius: var(--radius); }
+#app .FormRow { gap: 0.8rem; flex-wrap: wrap; align-items: flex-start; }
+#app .FormRow > .chime-field-holder { flex: 1 1 10rem; }
+#app .chime-field { background: #000; border: 1px solid var(--chime-edge); border-radius: var(--radius-s); color: var(--chime-ink); font-family: var(--body); color-scheme: dark; }
+#app textarea.chime-field { min-height: 6rem; resize: vertical; }
+#app .chime-field-label { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--chime-ink-soft); }
+#app .Chips { gap: 0.4rem; flex-wrap: wrap; }
+#app .chime-pressable.Chip { background: transparent; border: 1px solid var(--chime-edge); border-radius: 99px; min-height: 2rem; padding: 0.2rem 0.75rem; font-size: 0.8rem; color: var(--chime-ink-soft); }
+#app .chime-pressable.Chip.chime-current { background: var(--chime-accent); color: #000; border-color: transparent; font-weight: 600; }
+#app .Confirm { gap: 0.8rem; }
+#app .ShowThumb { width: 5rem; height: 5rem; flex: none; border-radius: var(--radius-s); padding: 0; }
+#app .ShowThumb .ArtworkLogo { width: 2.5rem; }
+#app .ProfileThumb { width: 8rem; height: 8rem; flex: none; border-radius: var(--radius-s); padding: 0; }
+#app .ProfileThumb .ArtworkLogo { width: 4rem; }
+#app .PhotoRow { gap: 1rem; align-items: center; }
+#app .MyShow { align-items: flex-start; }
+#app .MyShow .ShowTime { min-width: 0; }
+#app .DjAdmin { flex-direction: column; align-items: stretch; gap: 0.6rem; }
+#app .DjAdminRow { gap: 0.6rem; flex-wrap: wrap; }
+#app .LinkRow > .chime-field-holder { flex: 1 1 16rem; }
+#app .LinkRow { align-items: flex-end; }
+#app .chime-file-holder { align-items: flex-start; }
+#app .MessageBody { font-size: 0.95rem; line-height: 1.55; white-space: pre-wrap; }
+#app .ReplyLink { color: var(--chime-accent); font-weight: 600; font-size: 0.9rem; }
+#app .Letter { max-width: 38rem; }
+#app .Thanks { max-width: 38rem; padding: 1rem 1.25rem; border: 1px solid var(--chime-accent); border-radius: var(--radius); background: var(--chime-raised); display: flex; flex-direction: column; gap: 0.3rem; }
+#app .RecordingNote { font-size: 0.8rem; color: var(--chime-ink-soft); }
+#app .chime-sheet { background: var(--chime-raised); border-color: var(--chime-edge); border-radius: var(--radius); }
+
+/* ---- about ---- */
+#app .Hero { display: grid; grid-template-columns: minmax(0, 15rem) minmax(0, 1fr); gap: 1.5rem; align-items: center; padding: 1rem; background: var(--chime-raised); border: 1px solid var(--chime-edge); border-radius: var(--radius); }
+#app .HeroArt { aspect-ratio: 1; border-radius: var(--radius-s); }
+#app .HeroWords { gap: 0.6rem; padding: 0.5rem; }
+
+/* ---- the phone's tab bar, over the player ---- */
+#app .TabBar { display: none; }
+@media (max-width: 40rem) {
+  #app { --tabs: 3.25rem; }
+  #app .Nav { display: none; }
+  #app .TopNav > .chime-each, #app .TopNav .Mark { flex-grow: 1; }
+  #app .TabBar { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0; position: fixed; left: 0; right: 0; bottom: var(--player); z-index: 6; height: var(--tabs); background: var(--bg-2); border-top: 1px solid var(--chime-edge); }
+  #app .chime-pressable.Tab { background: none; border: 0; border-radius: 0; min-height: 0; padding: 0; justify-content: center; color: var(--muted); }
+  #app .chime-pressable.Tab.chime-current { color: var(--chime-accent); box-shadow: inset 0 2px 0 var(--chime-accent); opacity: 1; }
+  #app .TabWords { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.03em; text-transform: uppercase; }
+  #app .chime-stack { padding-bottom: calc(var(--player) + var(--tabs) + 2rem); }
+}
+
+/* ---- a phone ---- */
+@media (max-width: 40rem) {
+  #app .TopNav { gap: 0.6rem; }
+  #app .Wordmark { display: none; }
+  #app .OnAir { grid-template-columns: minmax(0, 1fr); }
+  #app .OnAirArt, #app .HeroArt { aspect-ratio: auto; padding: 1.5rem 1rem; }
+  #app .OnAirArt .ArtworkLogo, #app .HeroArt .ArtworkLogo { width: 6rem; }
+  #app .Hero { grid-template-columns: minmax(0, 1fr); }
+  #app .ShowRow { flex-wrap: wrap; gap: 0.4rem 1rem; }
+  #app .ShowTime { min-width: 0; }
+  #app .PlayerShow { display: none; }
+  #app .ShowActions { width: 100%; }
+  #app .chime-pressable.SignIn { padding: 0.35rem 0.8rem; }
+}
+/* where the reader already is: the nav's own pressables are current, not dimmed */
+#app .chime-pressable.NavLink.chime-current, #app .chime-pressable.SignIn.chime-current, #app .chime-pressable.Mark { opacity: 1; }
+/* a form's own button sits at its start, not across it */
+#app .Form > .chime-pressable { align-self: flex-start; }
+/* the genre list's rows: each line's label is for a reader who can't see the list, not repeated on screen */
+#app .GenreRow .chime-field-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+#app .GenreRow { align-items: flex-start; }
+
+/* ---- the admin's dashboard ---- */
+#app .Stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.8rem; align-items: stretch; }
+#app .Stat { display: flex; flex-direction: column; gap: 0.25rem; padding: 1rem; background: var(--chime-raised); border: 1px solid var(--chime-edge); border-radius: var(--radius); }
+#app .Stat.Wide { grid-column: span 2; }
+#app .StatFigure { font-family: var(--display); font-size: 2.6rem; line-height: 1; color: var(--chime-accent); }
+#app .StatTitle { font-family: var(--display); font-size: 1.6rem; line-height: 1.05; text-transform: uppercase; }
+#app .StatLabel { font-size: 0.8rem; color: var(--chime-ink-soft); }
+#app .Stat .chime-pressable.More { align-self: flex-start; margin-top: auto; }
+#app .TodoRow { gap: 1rem; padding: 0.55rem 0.8rem; background: var(--chime-raised); border: 1px solid var(--chime-edge); border-radius: var(--radius-s); flex-wrap: wrap; }
+@media (max-width: 40rem) { #app .Stat.Wide { grid-column: auto; } }
+
+/* the listener chart: brand yellow columns on the raised ground */
+#app .chime-bars { padding: 1rem; background: var(--chime-raised); border: 1px solid var(--chime-edge); border-radius: var(--radius); font-family: var(--mono); }
+#app .chime-bars-label, #app .chime-bars-top { font-family: var(--mono); font-size: 0.65rem; }

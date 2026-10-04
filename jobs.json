@@ -1,0 +1,3 @@
+[
+  { "every_minutes": 5, "fetch": "https://s1.citrus3.com:2000/AudioPlayer/TheHatch/playerInfo", "call": "the_hatch_log_listeners" }
+]
