@@ -115,13 +115,20 @@ export class TheHatch extends ChimeApp {
     this.desk = this.model(new Desk.ScheduleDesk(this.chimes, studio, changed));
     this.workspace = this.model(new Work.Workspace(this.chimes, studio, changed));
     this.letters = this.model(new Mail.Letters(this.chimes, studio));
-    this.inbox = this.model(new Box.Inbox(this.chimes, studio, changed));
+    // a DJ added, linked or removed: every list of DJs found again, and the signed-in account's own DJ page
+    const djsChanged = (reloadsAdminDjs = true) => {
+      changed();
+      if (this.desk.studio) this.desk.loadLists();
+      if (reloadsAdminDjs && this.adminDjs.studio) this.adminDjs.load();
+      this.refreshMyDj();
+    };
+    this.inbox = this.model(new Box.Inbox(this.chimes, studio, djsChanged));
     this.words = this.model(new Keep.StationWords(this.chimes, studio));
     this.heard = this.model(new Listeners(this.chimes, studio)); // the station's, for the admin
     this.myHeard = this.model(new Listeners(this.chimes, studio)); // the DJ open in the workspace's
     this.settings = this.model(new Keep.Settings(this.chimes, studio, () => { changed(); if (this.words.studio) this.words.load(); }));
     this.part = this.model(new Choice(this.chimes, SHOWS_PART, "dashboard")); // the admin's: dashboard, schedule, djs, settings, inbox or workspace
-    this.adminDjs = this.model(new Djs.AdminDjs(this.chimes, studio, () => { changed(); this.refreshMyDj(); }, (profile) => {
+    this.adminDjs = this.model(new Djs.AdminDjs(this.chimes, studio, () => djsChanged(false), (profile) => {
       this.workspace.open(profile);
       this.part.chosen.setValue("workspace");
     }));
