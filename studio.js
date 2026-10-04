@@ -143,6 +143,14 @@ export class Studio {
 
   async deleteGenre(id) { return answer(await this.backend.delete("the_hatch_genres", `id=eq.${encodeURIComponent(id)}`)); }
 
+  // --- the admins ---
+
+  async admins() { return answer(await this.backend.callRpc("the_hatch_admin_list")); }
+
+  async addAdmin(id) { return answer(await this.backend.callRpc("the_hatch_add_admin", { account: id })); }
+
+  async removeAdmin(id) { return answer(await this.backend.callRpc("the_hatch_remove_admin", { account: id })); }
+
   // --- the admin's inbox ---
 
   async messages() {

@@ -59,6 +59,7 @@ const ASKS_TO_REMOVE_DJ = "asks_to_remove_a_dj";
 const GOES_CONTACT = "goes_to_contact";
 const GOES_JOIN = "goes_to_join_us";
 const ASKS_TO_DELETE_GENRE = "asks_to_delete_a_genre";
+const ASKS_TO_REMOVE_ADMIN = "asks_to_remove_an_admin";
 const GOES_ACCOUNT = "goes_to_account";
 const RELOADS = "reloads_the_schedule";
 const ASKS_TO_DELETE = "asks_to_delete_a_show";
@@ -90,6 +91,7 @@ export class TheHatch extends ChimeApp {
       ...Box.WORDS,
       ...Keep.WORDS,
       [ASKS_TO_DELETE_GENRE]: ["Remove"],
+      [ASKS_TO_REMOVE_ADMIN]: ["Remove"],
       ...Work.WORDS,
       ...Djs.WORDS,
       [RELOADS]: ["Try again"],
@@ -271,20 +273,11 @@ export class TheHatch extends ChimeApp {
     ], "PlayButtons");
   }
 
-  /**
-   * Where artwork goes: the picture given (a bound value, when there is one),
-   * else the station logo on black with a note saying what will go there and
-   * from where.
-   */
-  artwork(style, placeholder = null, picture = null) {
+  /** Where artwork goes: the picture given (a bound value, when there is one), else the station logo on black. */
+  artwork(style, picture = null) {
     const ui = this.ui;
     const has = picture ?? ui.bound(() => "");
-    return ui.surface(`${style} Artwork`, [
-      ui.when(has, ui.image(has, "ArtworkPicture", ""), ui.column([
-        ui.image(LOGO, "ArtworkLogo", ""),
-        placeholder ? ui.text(placeholder, "PlaceholderNote").wraps() : null,
-      ].filter(Boolean), "ArtworkStandIn")),
-    ]);
+    return ui.surface(`${style} Artwork`, [ui.when(has, ui.image(has, "ArtworkPicture", ""), ui.image(LOGO, "ArtworkLogo", ""))]);
   }
 
   /** A show's genre tags, as tags. */
@@ -305,7 +298,7 @@ export class TheHatch extends ChimeApp {
     const track = this.station.nowPlaying.map((playing) => (playing ? Phrase.with("Now playing: %s", [playing]) : null));
     return ui.screen(HOME, [
       ui.surface("OnAir", [
-        this.artwork("OnAirArt", Phrase.of("Placeholder: the artwork of the show on air, uploaded by its DJ in the DJ workspace. The station logo until then, and whenever a show has none."), ui.bound(() => this.showPicture())),
+        this.artwork("OnAirArt", ui.bound(() => this.showPicture())),
         ui.column([
           ui.row([ui.text(Phrase.of("On air"), "Live"), this.tags(show)], "OnAirTags"),
           ui.text(title, "OnAirTitle").wraps(),
@@ -392,7 +385,7 @@ export class TheHatch extends ChimeApp {
     const ui = this.ui;
     const next = dj.map((held) => (held?.next ? Phrase.with("Next: %s", [`${dayName(held.next.starts, this.schedule.now.read())} ${slotOf(held.next)}`]) : null));
     return ui.pressable(OPENS_DJ, dj.map((held) => ({ parameter: held?.id })), [
-      this.artwork("DjCardArt", null, dj.map((held) => held?.picture ?? "")),
+      this.artwork("DjCardArt", dj.map((held) => held?.picture ?? "")),
       ui.column([
         ui.row([ui.text(dj.map((held) => held?.name ?? ""), "DjName"), ui.when(dj.map((held) => !!held?.resident), ui.text(Phrase.of("Resident"), "Tag Solid"))], "DjNameRow"),
         ui.text(dj.map((held) => (held ? held.genres.map((genre) => genre.name).join(" · ") : "")), "DjGenres").hidesEmpty(),
@@ -434,7 +427,7 @@ export class TheHatch extends ChimeApp {
     return ui.screen(DJ, [
       ui.when(ui.bound(() => library.loading.read() === "ready" && !dj.read()), ui.text(Phrase.of("That DJ isn't on the station's list."), "Quiet")),
       ui.surface("Hero", [
-        this.artwork("HeroArt", Phrase.of("Placeholder: the DJ's photo, uploaded by the DJ in the DJ workspace. The station logo until then."), dj.map((held) => held?.picture ?? "")),
+        this.artwork("HeroArt", dj.map((held) => held?.picture ?? "")),
         ui.column([
           ui.row([ui.text(dj.map((held) => held?.name ?? ""), "PageTitle"), ui.when(dj.map((held) => !!held?.resident), ui.text(Phrase.of("Resident"), "Tag Solid"))], "DjNameRow"),
           ui.text(dj.map((held) => held?.location ?? ""), "OnAirLine").hidesEmpty(),
@@ -525,7 +518,7 @@ export class TheHatch extends ChimeApp {
     const ui = this.ui;
     return ui.screen(ABOUT, [
       ui.surface("Hero", [
-        this.artwork("HeroArt", Phrase.of("Placeholder: the station's artwork, chosen by an admin in Station Settings. The station logo until then."), this.words.picture),
+        this.artwork("HeroArt", this.words.picture),
         ui.column([
           ui.text(STATION.name, "PageTitle"),
           ui.each(ui.bound(() => this.words.paragraphs()), (words) => ui.text(words, "Lead").wraps(), null, "Paragraphs"),
@@ -758,13 +751,40 @@ export class TheHatch extends ChimeApp {
         ], "Actions"),
       ], "Confirm");
     });
+    const confirmAdmin = ui.popUp("confirm_remove_admin", (id) => {
+      const admin = ui.bound(() => settings.admins.read().find((held) => held.user_id === id.read()) ?? null);
+      return ui.column([
+        ui.text(admin.map((held) => Phrase.with("Remove %s as an admin?", [held?.name || held?.email || ""])), "SectionTitle"),
+        ui.text(ui.bound(() => (id.read() === this.account.id.read() ? Phrase.of("That's you: you'll lose the admin screens straight away.") : Phrase.of("They keep their account, and their DJ page if they have one."))), "Quiet").wraps(),
+        ui.row([
+          ui.button(Keep.REMOVES_ADMIN, { payload: id.map((held) => ({ id: held })), goes_to: ACCOUNT, style: "DangerButton" }),
+          ui.button(Ui.CLOSES, { style: "SecondaryButton" }),
+        ], "Actions"),
+      ], "Confirm");
+    });
     return ui.column([
       ui.text(settings.notice, "Notice").hidesEmpty(),
       ui.text(settings.problem, "Problem").wraps().hidesEmpty(),
       ui.surface("Form", [
+        ui.text(Phrase.of("Admins"), "SectionTitle"),
+        ui.text(Phrase.of("They run the station: the schedule, the DJs, the inbox and these settings. Someone becomes an admin by signing in once, then giving you the id their Account screen shows."), "Quiet").wraps(),
+        ui.each(settings.admins, (admin) => ui.row([
+          ui.column([
+            ui.text(admin.map((held) => held?.name || held?.email || held?.user_id || ""), "ShowTitle"),
+            ui.text(admin.map((held) => (held?.name ? held.email : "")), "ShowWho").hidesEmpty(),
+          ], "ShowWords").grow(),
+          ui.when(ui.bound(() => admin.read()?.user_id === this.account.id.read()), ui.text(Phrase.of("You"), "Tag")),
+          ui.button(ASKS_TO_REMOVE_ADMIN, { opens: confirmAdmin, with: admin.map((held) => held?.user_id), style: "SecondaryButton" }),
+        ], "TodoRow"), (admin) => admin.user_id, "ShowList"),
+        ui.row([
+          ui.field(Keep.SETS_ADMIN_ID, "", { label: Phrase.of("Their account id, from their Account screen"), changes: Keep.SETS_ADMIN_ID, shows: settings.adminId }),
+          ui.button(Keep.ADDS_ADMIN, { style: "SecondaryButton" }),
+        ], "DjAdminRow LinkRow"),
+      ]),
+      ui.surface("Form", [
         ui.text(Phrase.of("The station's picture"), "SectionTitle"),
         ui.row([
-          this.artwork("ProfileThumb", null, settings.saved.map((held) => held.picture_url)),
+          this.artwork("ProfileThumb", settings.saved.map((held) => held.picture_url)),
           ui.column([
             ui.text(Phrase.of("Shown on the About page. Without one, the station logo."), "Quiet").wraps(),
             ui.row([
@@ -855,7 +875,7 @@ export class TheHatch extends ChimeApp {
     const genreChips = ui.eachAcross(work.genres, (held) => ui.pressable(Work.TOGGLES_GENRE, held.map((genre) => ({ id: genre?.id })), [ui.text(held.map((genre) => genre?.name ?? ""), "ChipWords")], "Chip")
       .currentWhile(ui.bound(() => work.genreIds.read().includes(held.read()?.id))), (genre) => genre.id, "Chips");
     const showRow = (show, past) => ui.row([
-      this.artwork("ShowThumb", null, show.map((held) => held?.picture ?? "")),
+      this.artwork("ShowThumb", show.map((held) => held?.picture ?? "")),
       ui.column([
         ui.text(show.map((held) => (held ? `${dateOf(held.starts)} · ${slotOf(held)}` : "")), "ShowTime"),
         ui.text(show.map((held) => held?.title ?? ""), "ShowTitle").wraps(),
@@ -877,7 +897,7 @@ export class TheHatch extends ChimeApp {
       ui.surface("Form", [
         ui.text(Phrase.of("Profile"), "SectionTitle"),
         ui.row([
-          this.artwork("ProfileThumb", null, work.picture),
+          this.artwork("ProfileThumb", work.picture),
           ui.column([
             ui.text(Phrase.of("Your photo is shown on your page and the DJ list. A square one works best."), "Quiet").wraps(),
             ui.file(Work.CHOOSES_PHOTO, Phrase.of("Choose a photo"), { accept: "image/*", style: "SecondaryButton" }),

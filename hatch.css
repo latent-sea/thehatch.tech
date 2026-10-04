@@ -68,7 +68,6 @@ body::after {
 #app .ArtworkLogo { width: min(45%, 9rem); height: auto; }
 #app .Cover .ArtworkLogo { width: 70%; }
 #app .Cover { padding: 0; }
-#app .PlaceholderNote { font-family: var(--mono); font-size: 0.65rem; line-height: 1.5; letter-spacing: 0.02em; color: var(--muted); text-align: center; max-width: 30ch; }
 
 /* ---- the top navigation ---- */
 #app .TopNav { position: sticky; top: 0; z-index: 5; gap: 1.1rem; padding: 0.7rem clamp(1rem, 4vw, 2.5rem); background: color-mix(in srgb, var(--bg-2) 88%, transparent); backdrop-filter: blur(14px); border-bottom: 1px solid var(--chime-edge); }
@@ -83,12 +82,15 @@ body::after {
 
 /* ---- play buttons: an icon, the words kept for a reader who can't see it ---- */
 #app .PlayButtons { gap: 0; flex: none; }
-#app .chime-pressable.PlayButton, #app .chime-pressable.BigPlay { background: var(--chime-accent); color: #000; border: 0; border-radius: 50%; padding: 0; justify-content: center; position: relative; flex: none; }
+#app .chime-pressable.PlayButton, #app .chime-pressable.BigPlay { background: var(--chime-accent); color: #000; border: 0; border-radius: 50%; padding: 0; gap: 0; justify-content: center; align-items: center; position: relative; flex: none; }
+/* the words' column takes no room, so the icon alone is centred */
+#app .PlayButton > .chime-column, #app .BigPlay > .chime-column { position: absolute; width: 0; height: 0; overflow: hidden; }
 #app .chime-pressable.PlayButton { width: 2.75rem; height: 2.75rem; min-height: 0; }
 #app .chime-pressable.BigPlay { width: 3.5rem; height: 3.5rem; min-height: 0; }
 #app .chime-pressable.PlayButton:hover, #app .chime-pressable.BigPlay:hover { background: var(--chime-accent-2); }
 #app .PlayButton .Face, #app .BigPlay .Face, #app .PlayButton .Reason, #app .BigPlay .Reason { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-#app .Plays::before { content: ""; margin-left: 0.2em; border-style: solid; border-width: 0.5em 0 0.5em 0.85em; border-color: transparent transparent transparent #000; }
+/* the triangle's weight sits a third of the way from its flat side: nudged right by that much, it looks centred */
+#app .Plays::before { content: ""; margin-left: 0.28em; border-style: solid; border-width: 0.5em 0 0.5em 0.85em; border-color: transparent transparent transparent #000; }
 #app .Stops::before { content: ""; width: 0.8em; height: 0.8em; background: #000; border-radius: 1px; }
 #app .BigPlay { font-size: 1.3rem; }
 
