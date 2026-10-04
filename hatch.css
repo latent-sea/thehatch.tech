@@ -182,7 +182,9 @@ body::after {
 
 /* ---- the account and the admin ---- */
 #app .SignInCard { display: flex; flex-direction: column; gap: 0.9rem; max-width: 34rem; padding: 1.5rem; background: var(--chime-raised); border: 1px solid var(--chime-edge); border-radius: var(--radius); align-items: flex-start; }
-#app .GoogleButton { padding: 0; min-height: 44px; }
+/* Google's button is a light page in a frame: on a dark page the browser paints that frame white
+   unless it is told the frame's ground is light too, which leaves it transparent */
+#app .GoogleButton { padding: 0; min-height: 44px; background: transparent; color-scheme: light; }
 #app .Manager { gap: 0.9rem; }
 #app .AdminHead { gap: 1rem; align-items: flex-end; flex-wrap: wrap; }
 #app .Who { gap: 0.4rem; align-items: flex-end; }
