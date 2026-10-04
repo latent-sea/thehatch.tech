@@ -552,7 +552,7 @@ export class TheHatch extends ChimeApp {
       ui.when(ui.bound(() => account.state.read() === "in" && !account.admin.read() && !account.dj.read()), ui.surface("SignInCard", [
         ui.text(Phrase.of("Account"), "PageTitle"),
         ui.text(account.name.map((name) => Phrase.with("Signed in as %s.", [name])), "Lead").wraps(),
-        ui.text(account.id.map((id) => Phrase.with("This account isn't set up for the station yet. An admin can add it with this id: %s", [id])), "Quiet").wraps(),
+        ui.text(account.email.map((email) => Phrase.with("This account isn't set up for the station yet. If you're a DJ or an admin, ask an admin to add your email: %s", [email])), "Quiet").wraps(),
         ui.text(account.problem, "Problem").wraps().hidesEmpty(),
         ui.button(SIGNS_OUT, { style: "SecondaryButton" }),
       ])),
@@ -592,7 +592,7 @@ export class TheHatch extends ChimeApp {
     ], "Manager");
   }
 
-  /** The admin's DJs: add one, make them resident, link their account, edit or remove them. */
+  /** The admin's DJs: add one, make them resident, invite them by their sign-in email, edit or remove them. */
   djsManager() {
     const ui = this.ui;
     const djs = this.adminDjs;
@@ -618,11 +618,17 @@ export class TheHatch extends ChimeApp {
           ui.button(Djs.EDITS_DJ, { payload: dj.map((held) => ({ id: held?.id })), style: "SecondaryButton" }),
           ui.button(ASKS_TO_REMOVE_DJ, { opens: confirm, with: dj.map((held) => held?.id), style: "SecondaryButton" }),
         ], "DjAdminRow"),
-        ui.when(dj.map((held) => !!held?.hasAccount),
-          ui.row([ui.text(Phrase.of("Account linked: they can edit their own page."), "Quiet").grow(), ui.button(Djs.UNLINKS_ACCOUNT, { payload: dj.map((held) => ({ id: held?.id })), style: "SecondaryButton" })], "DjAdminRow"),
+        ui.text(ui.bound(() => {
+          const sign = djs.signIn(dj.read()?.id);
+          if (sign.state === "in") return Phrase.with("Signed in as %s: they can edit their own page.", [sign.email]);
+          if (sign.state === "invited") return Phrase.with("Invited as %s: they get their page when they first sign in with Google.", [sign.email]);
+          return Phrase.of("No sign-in email yet: add the one they use with Google so they can edit their own page.");
+        }), "Quiet").wraps(),
+        ui.when(ui.bound(() => djs.signIn(dj.read()?.id).state === "in"),
+          ui.row([ui.button(Djs.UNLINKS_ACCOUNT, { payload: dj.map((held) => ({ id: held?.id })), style: "SecondaryButton" })], "DjAdminRow"),
           ui.row([
-            ui.field(Djs.SETS_ACCOUNT_ID, "", { label: Phrase.of("Their account id, from their Account screen"), changes: Djs.SETS_ACCOUNT_ID, carries: (line) => ({ id: dj.read()?.id, line }), shows: ui.bound(() => djs.ids.read()[dj.read()?.id] ?? "") }),
-            ui.button(Djs.LINKS_ACCOUNT, { payload: dj.map((held) => ({ id: held?.id })), style: "SecondaryButton" }),
+            ui.field(Djs.SETS_DJ_EMAIL, "", { label: Phrase.of("Their sign-in email"), placeholder: Phrase.of("name@gmail.com"), changes: Djs.SETS_DJ_EMAIL, carries: (line) => ({ id: dj.read()?.id, line }), shows: ui.bound(() => djs.emails.read()[dj.read()?.id] ?? "") }),
+            ui.button(Djs.SAVES_DJ_EMAIL, { payload: dj.map((held) => ({ id: held?.id })), style: "SecondaryButton" }),
           ], "DjAdminRow LinkRow")),
       ], "ShowRow DjAdmin"), (dj) => dj.id, "ShowList"),
     ], "Manager");
@@ -751,13 +757,14 @@ export class TheHatch extends ChimeApp {
         ], "Actions"),
       ], "Confirm");
     });
-    const confirmAdmin = ui.popUp("confirm_remove_admin", (id) => {
-      const admin = ui.bound(() => settings.admins.read().find((held) => held.user_id === id.read()) ?? null);
+    const confirmAdmin = ui.popUp("confirm_remove_admin", (email) => {
+      const admin = ui.bound(() => settings.admins.read().find((held) => held.email === email.read()) ?? null);
+      const isMe = ui.bound(() => !!admin.read()?.user_id && admin.read().user_id === this.account.id.read());
       return ui.column([
-        ui.text(admin.map((held) => Phrase.with("Remove %s as an admin?", [held?.name || held?.email || ""])), "SectionTitle"),
-        ui.text(ui.bound(() => (id.read() === this.account.id.read() ? Phrase.of("That's you: you'll lose the admin screens straight away.") : Phrase.of("They keep their account, and their DJ page if they have one."))), "Quiet").wraps(),
+        ui.text(admin.map((held) => (held?.invited ? Phrase.with("Take back the invite for %s?", [held.email]) : Phrase.with("Remove %s as an admin?", [held?.name || held?.email || ""]))), "SectionTitle"),
+        ui.text(ui.bound(() => (isMe.read() ? Phrase.of("That's you: you'll lose the admin screens straight away.") : Phrase.of("They keep their account, and their DJ page if they have one."))), "Quiet").wraps(),
         ui.row([
-          ui.button(Keep.REMOVES_ADMIN, { payload: id.map((held) => ({ id: held })), goes_to: ACCOUNT, style: "DangerButton" }),
+          ui.button(Keep.REMOVES_ADMIN, { payload: email.map((held) => ({ email: held })), goes_to: ACCOUNT, style: "DangerButton" }),
           ui.button(Ui.CLOSES, { style: "SecondaryButton" }),
         ], "Actions"),
       ], "Confirm");
@@ -767,17 +774,17 @@ export class TheHatch extends ChimeApp {
       ui.text(settings.problem, "Problem").wraps().hidesEmpty(),
       ui.surface("Form", [
         ui.text(Phrase.of("Admins"), "SectionTitle"),
-        ui.text(Phrase.of("They run the station: the schedule, the DJs, the inbox and these settings. Someone becomes an admin by signing in once, then giving you the id their Account screen shows."), "Quiet").wraps(),
+        ui.text(Phrase.of("They run the station: the schedule, the DJs, the inbox and these settings. Add someone by the email they sign in with Google; they see the admin screens when they sign in."), "Quiet").wraps(),
         ui.each(settings.admins, (admin) => ui.row([
           ui.column([
-            ui.text(admin.map((held) => held?.name || held?.email || held?.user_id || ""), "ShowTitle"),
-            ui.text(admin.map((held) => (held?.name ? held.email : "")), "ShowWho").hidesEmpty(),
+            ui.text(admin.map((held) => held?.name || held?.email || ""), "ShowTitle"),
+            ui.text(admin.map((held) => (held?.invited ? Phrase.of("Invited, not signed in yet") : held?.name ? held.email : "")), "ShowWho").hidesEmpty(),
           ], "ShowWords").grow(),
-          ui.when(ui.bound(() => admin.read()?.user_id === this.account.id.read()), ui.text(Phrase.of("You"), "Tag")),
-          ui.button(ASKS_TO_REMOVE_ADMIN, { opens: confirmAdmin, with: admin.map((held) => held?.user_id), style: "SecondaryButton" }),
-        ], "TodoRow"), (admin) => admin.user_id, "ShowList"),
+          ui.when(ui.bound(() => !!admin.read()?.user_id && admin.read().user_id === this.account.id.read()), ui.text(Phrase.of("You"), "Tag")),
+          ui.button(ASKS_TO_REMOVE_ADMIN, { opens: confirmAdmin, with: admin.map((held) => held?.email), style: "SecondaryButton" }),
+        ], "TodoRow"), (admin) => admin.email, "ShowList"),
         ui.row([
-          ui.field(Keep.SETS_ADMIN_ID, "", { label: Phrase.of("Their account id, from their Account screen"), changes: Keep.SETS_ADMIN_ID, shows: settings.adminId }),
+          ui.field(Keep.SETS_ADMIN_EMAIL, "", { label: Phrase.of("Their sign-in email"), placeholder: Phrase.of("name@gmail.com"), changes: Keep.SETS_ADMIN_EMAIL, shows: settings.adminEmail }),
           ui.button(Keep.ADDS_ADMIN, { style: "SecondaryButton" }),
         ], "DjAdminRow LinkRow"),
       ]),

@@ -145,9 +145,13 @@ export class Studio {
 
   // --- the admins ---
 
-  async admins() { return answer(await this.backend.callRpc("the_hatch_admin_list")); }
+  /** The admins and those invited to be: { user_id (null while invited), name, email, invited }. */
+  async admins() { return answer(await this.backend.callRpc("the_hatch_admins_and_invites")); }
 
-  async addAdmin(id) { return answer(await this.backend.callRpc("the_hatch_add_admin", { account: id })); }
+  /** Someone made an admin by email: at once if they've signed in, else when they first do. */
+  async inviteAdmin(email) { return answer(await this.backend.callRpc("the_hatch_invite_admin", { email })); }
+
+  async uninviteAdmin(email) { return answer(await this.backend.callRpc("the_hatch_uninvite_admin", { email })); }
 
   async removeAdmin(id) { return answer(await this.backend.callRpc("the_hatch_remove_admin", { account: id })); }
 
@@ -182,6 +186,12 @@ export class Studio {
   async signInWithGoogle(credential, nonce) { return answer(await this.backend.signInWithGoogleToken(credential, nonce)); }
 
   async signOut() { await this.backend.signOut(); }
+
+  /** What waits for the signed-in account's email taken up - a DJ profile, admin - after each sign-in. */
+  async claim() { return answer(await this.backend.callRpc("the_hatch_claim")); }
+
+  /** The signed-in account's email, for saying who is signed in. */
+  userEmail() { return this.backend.session?.user?.email ?? ""; }
 
   async isAdmin() {
     const reply = await this.backend.callRpc("the_hatch_is_admin");
@@ -248,13 +258,13 @@ export class Studio {
 
   async setResident(id, resident) { return answer(await this.backend.update("the_hatch_djs", `id=eq.${encodeURIComponent(id)}`, { resident })); }
 
-  /** A DJ profile given to an account (its id, as the account's own screen shows it), or taken from one (null). */
-  async linkAccount(id, userId) {
-    const reply = await this.backend.update("the_hatch_djs", `id=eq.${encodeURIComponent(id)}`, { user_id: userId });
-    if (reply.status === 409) return { ok: false, data: null, error: "That account already has a DJ profile" };
-    if (reply.status === 400 || reply.status === 404 || (reply.data?.code ?? "") === "23503") return { ok: false, data: null, error: "There's no account with that id" };
-    return answer(reply);
-  }
+  /** Each DJ's sign-in, for an admin: { dj_id, invite_email, account_email }. */
+  async djAccounts() { return answer(await this.backend.callRpc("the_hatch_dj_accounts")); }
+
+  /** A DJ invited by the email they sign in with ('' takes it back): { ok, data: whether linked at once, error }. */
+  async inviteDj(id, email) { return answer(await this.backend.callRpc("the_hatch_invite_dj", { dj: id, email })); }
+
+  async unlinkDj(id) { return answer(await this.backend.callRpc("the_hatch_unlink_dj", { dj: id })); }
 
   async deleteDj(id) { return answer(await this.backend.delete("the_hatch_djs", `id=eq.${encodeURIComponent(id)}`)); }
 

@@ -1,8 +1,8 @@
 // Who is signed in, and whether they run the station: signing in with Google
-// (studio.js), then asking the platform whether the account is an admin's
-// (the_hatch_admins) and whether it has a DJ profile (the_hatch_djs). An
-// account that is neither is shown its id: the id an admin gives a DJ
-// profile, or puts in the_hatch_admins.
+// (studio.js), then taking up whatever an admin invited their email to - a
+// DJ profile, admin (the_hatch_claim) - and asking whether the account is an
+// admin's and has a DJ profile. No one ever handles an account id: an
+// account that is neither is told to ask an admin to invite its email.
 
 import { Controller, Phrase } from "./gd_chime/gd_chime.js";
 
@@ -16,6 +16,7 @@ export class Account extends Controller {
     this.state = this.value(studio ? "checking" : "out"); // checking, out or in
     this.name = this.value("");
     this.id = this.value("");
+    this.email = this.value("");
     this.admin = this.value(false);
     this.dj = this.value(null); // the account's DJ profile, or null
     this.problem = this.value("");
@@ -30,7 +31,7 @@ export class Account extends Controller {
   told(action) {
     if (action === SIGNS_OUT) {
       this.studio?.signOut();
-      this.became({ state: "out", name: "", id: "", admin: false, dj: null });
+      this.became({ state: "out", name: "", id: "", email: "", admin: false, dj: null });
     }
     return null;
   }
@@ -45,16 +46,18 @@ export class Account extends Controller {
 
   /** Someone is signed in: who, whether they are an admin, and their DJ profile if they have one. */
   async signedIn() {
+    const claimed = await this.studio.claim();
     const [admin, dj] = await Promise.all([this.studio.isAdmin(), this.studio.myDj()]);
     if (this.disposed) return;
-    this.became({ state: "in", name: this.studio.userName(), id: this.studio.backend.playerId(), admin: admin.ok && admin.data, dj: dj.ok ? dj.data : null });
-    if (!admin.ok || !dj.ok) this.problem.setValue(admin.error || dj.error);
+    this.became({ state: "in", name: this.studio.userName(), id: this.studio.backend.playerId(), email: this.studio.userEmail(), admin: admin.ok && admin.data, dj: dj.ok ? dj.data : null });
+    if (!claimed.ok || !admin.ok || !dj.ok) this.problem.setValue(claimed.error || admin.error || dj.error);
   }
 
   /** The account as it now stands. */
-  became({ state, name, id, admin, dj = null }) {
+  became({ state, name, id, email = "", admin, dj = null }) {
     this.name.setValue(name);
     this.id.setValue(id);
+    this.email.setValue(email);
     this.admin.setValue(admin);
     this.dj.setValue(dj);
     this.state.setValue(state);

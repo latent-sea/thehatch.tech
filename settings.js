@@ -1,12 +1,14 @@
 // The station's own words and artwork - the About page, the Join Us page,
 // the station's picture - read by every visitor (StationWords), and kept by
 // an admin in Station Settings (Settings), with the list of genre tags:
-// added, renamed, removed - and the admins themselves: added by the account
-// id their own Account screen shows them, removed, never the last. Until
+// added, renamed, removed - and the admins themselves: invited by the email
+// they sign in with (admins at once if they've signed in before, else when
+// they first do), removed, never the last. Until
 // the platform answers, the words are content.js's.
 
 import { Controller, Phrase } from "./gd_chime/gd_chime.js";
 import { STATION } from "./content.js";
+import { EMAIL } from "./admin_djs.js";
 
 /** What visitors read: found once as the page opens, and again when an admin saves. */
 export class StationWords extends Controller {
@@ -44,7 +46,7 @@ export const ADDS_GENRE = "adds_a_station_genre";
 export const SETS_GENRE_NAME = "sets_a_genre_name";
 export const RENAMES_GENRE = "renames_a_genre";
 export const DELETES_GENRE = "deletes_a_genre";
-export const SETS_ADMIN_ID = "sets_an_admin_id";
+export const SETS_ADMIN_EMAIL = "sets_an_admin_email";
 export const ADDS_ADMIN = "adds_an_admin";
 export const REMOVES_ADMIN = "removes_an_admin";
 
@@ -58,7 +60,7 @@ export const WORDS = {
   [SETS_GENRE_NAME]: ["Genre name"],
   [RENAMES_GENRE]: ["Rename"],
   [DELETES_GENRE]: ["Remove genre"],
-  [SETS_ADMIN_ID]: ["Account id"],
+  [SETS_ADMIN_EMAIL]: ["Their sign-in email"],
   [ADDS_ADMIN]: ["Make admin"],
   [REMOVES_ADMIN]: ["Remove admin"],
 };
@@ -75,7 +77,7 @@ export class Settings extends Controller {
     this.genres = this.value([]);
     this.names = this.value({}); // genre id -> its name as typed
     this.admins = this.value([]);
-    this.adminId = this.value("");
+    this.adminEmail = this.value("");
     this.busy = this.value(false);
     this.problem = this.value("");
     this.notice = this.value("");
@@ -97,13 +99,13 @@ export class Settings extends Controller {
   answers() { return Object.keys(WORDS); }
 
   would(action, payload) {
-    if (![SETS_ABOUT, SETS_JOIN, SETS_GENRE_NAME, SETS_ADMIN_ID].includes(action) && this.busy.read()) return Phrase.of("Saving");
+    if (![SETS_ABOUT, SETS_JOIN, SETS_GENRE_NAME, SETS_ADMIN_EMAIL].includes(action) && this.busy.read()) return Phrase.of("Saving");
     if (action === ADDS_ADMIN) {
-      const id = this.adminId.read().trim();
-      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return Phrase.of("Paste the id from their Account screen");
-      if (this.admins.read().some((admin) => admin.user_id === id)) return Phrase.of("Already an admin");
+      const email = this.adminEmail.read().trim().toLowerCase();
+      if (!EMAIL.test(email)) return Phrase.of("The email they sign in with, please");
+      if (this.admins.read().some((admin) => admin.email.toLowerCase() === email)) return Phrase.of("Already on the list");
     }
-    if (action === REMOVES_ADMIN && this.admins.read().length < 2) return Phrase.of("The station needs at least one admin");
+    if (action === REMOVES_ADMIN && !this.admins.read().find((admin) => admin.email === payload?.email)?.invited && this.admins.read().filter((admin) => !admin.invited).length < 2) return Phrase.of("The station needs at least one admin");
     if (action === SAVES) {
       const saved = this.saved.read();
       if (this.about.read() === saved.about && this.joinUs.read() === saved.join_us) return Phrase.of("Nothing to save");
@@ -123,9 +125,17 @@ export class Settings extends Controller {
     this.notice.setValue("");
     if (action === SETS_ABOUT) this.about.setValue(payload.line);
     if (action === SETS_JOIN) this.joinUs.setValue(payload.line);
-    if (action === SETS_ADMIN_ID) this.adminId.setValue(payload.line);
-    if (action === ADDS_ADMIN) this.change(async () => { const made = await this.studio.addAdmin(this.adminId.read().trim()); if (made.ok) this.adminId.setValue(""); return made; }, "Admin added: they see the admin screens next time they sign in");
-    if (action === REMOVES_ADMIN) this.change(() => this.studio.removeAdmin(payload.id), "Admin removed");
+    if (action === SETS_ADMIN_EMAIL) this.adminEmail.setValue(payload.line);
+    if (action === ADDS_ADMIN) {
+      const email = this.adminEmail.read().trim().toLowerCase();
+      this.change(async () => { const made = await this.studio.inviteAdmin(email); if (made.ok) this.adminEmail.setValue(""); return made; },
+        (now) => (now ? `${email} is an admin: they see the admin screens next time they open the site` : `${email} invited: they become an admin when they first sign in with Google`));
+    }
+    if (action === REMOVES_ADMIN) {
+      const admin = this.admins.read().find((held) => held.email === payload.email);
+      if (admin?.invited) this.change(() => this.studio.uninviteAdmin(admin.email), "Invite taken back");
+      else if (admin) this.change(() => this.studio.removeAdmin(admin.user_id), "Admin removed");
+    }
     if (action === SETS_GENRE_NAME) this.names.update((names) => ({ ...names, [payload.id]: payload.line }));
     if (action === SAVES) this.change(() => this.studio.saveSettings({ about: this.about.read().trim(), join_us: this.joinUs.read().trim() }), "Saved: the pages show the new words");
     if (action === CHOOSES_PICTURE) {
@@ -154,7 +164,7 @@ export class Settings extends Controller {
     if (this.disposed) return;
     this.busy.setValue(false);
     if (!done.ok) { this.problem.setValue(done.error); return; }
-    this.notice.setValue(said);
+    this.notice.setValue(typeof said === "function" ? said(done.data) : said);
     await this.load();
     this.changed();
   }
