@@ -117,7 +117,6 @@ body::after {
 #app .OnAirTitle { font-size: clamp(2rem, 5vw, 3.25rem); }
 #app .OnAirLine { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--chime-ink-soft); }
 #app .OnAirControls { gap: 0.9rem; margin-top: 0.3rem; }
-#app .OnAirCount { font-size: 0.8rem; color: var(--chime-ink-soft); }
 
 #app .OnAirHost { font-size: 0.95rem; color: var(--chime-ink); }
 #app .OnAirTrack { font-size: 0.85rem; color: var(--chime-ink-soft); }

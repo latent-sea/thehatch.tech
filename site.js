@@ -13,23 +13,23 @@
 // studio.js): what is on air, what is next and the week ahead follow the
 // clock (schedule.js). Every time is UK time, the station's.
 
-import { ChimeApp, Chimes, Controller, Driver, Frames, Look, Phrase, Ui } from "./gd_chime/gd_chime.js?v=6e80f466b292";
-import { Player } from "./player/player.js?v=6e80f466b292";
-import { STATION } from "./content.js?v=6e80f466b292";
-import { HATCH } from "./palette.js?v=6e80f466b292";
-import { STREAM, Station, askHost, quietAudio } from "./station.js?v=6e80f466b292";
-import { Schedule, dateOf, dayAt, dayId, dayName, djsOf, genresOf, slotOf, timeOf, weekdayOf } from "./schedule.js?v=6e80f466b292";
-import { Studio } from "./studio.js?v=6e80f466b292";
-import { Account, SIGNS_OUT } from "./account.js?v=6e80f466b292";
-import * as Desk from "./desk.js?v=6e80f466b292";
-import { Library } from "./library.js?v=6e80f466b292";
-import * as Work from "./workspace.js?v=6e80f466b292";
-import * as Djs from "./admin_djs.js?v=6e80f466b292";
-import * as Mail from "./letters.js?v=6e80f466b292";
-import * as Box from "./inbox.js?v=6e80f466b292";
-import * as Keep from "./settings.js?v=6e80f466b292";
-import { Listeners } from "./listeners.js?v=6e80f466b292";
-import * as Tracks from "./track_pictures.js?v=6e80f466b292";
+import { ChimeApp, Chimes, Controller, Driver, Frames, Look, Phrase, Ui } from "./gd_chime/gd_chime.js?v=fc8f4b8b1b3f";
+import { Player } from "./player/player.js?v=fc8f4b8b1b3f";
+import { STATION } from "./content.js?v=fc8f4b8b1b3f";
+import { HATCH } from "./palette.js?v=fc8f4b8b1b3f";
+import { STREAM, Station, askHost, quietAudio } from "./station.js?v=fc8f4b8b1b3f";
+import { Schedule, dateOf, dayAt, dayId, dayName, djsOf, genresOf, slotOf, timeOf, weekdayOf } from "./schedule.js?v=fc8f4b8b1b3f";
+import { Studio } from "./studio.js?v=fc8f4b8b1b3f";
+import { Account, SIGNS_OUT } from "./account.js?v=fc8f4b8b1b3f";
+import * as Desk from "./desk.js?v=fc8f4b8b1b3f";
+import { Library } from "./library.js?v=fc8f4b8b1b3f";
+import * as Work from "./workspace.js?v=fc8f4b8b1b3f";
+import * as Djs from "./admin_djs.js?v=fc8f4b8b1b3f";
+import * as Mail from "./letters.js?v=fc8f4b8b1b3f";
+import * as Box from "./inbox.js?v=fc8f4b8b1b3f";
+import * as Keep from "./settings.js?v=fc8f4b8b1b3f";
+import { Listeners } from "./listeners.js?v=fc8f4b8b1b3f";
+import * as Tracks from "./track_pictures.js?v=fc8f4b8b1b3f";
 
 // the screens, by the address each is opened at
 const HOME = "home";
@@ -159,7 +159,7 @@ export class TheHatch extends ChimeApp {
   showPicture() { return this.schedule.onAir()?.picture || this.tracks.pictureFor(this.station.nowPlaying.read()); }
 
   // loaded only when the page is walked (?probe), so an export leaves it out
-  probe() { return import("./probe.js?v=6e80f466b292").then((made) => new made.Probe(this)); }
+  probe() { return import("./probe.js?v=fc8f4b8b1b3f").then((made) => new made.Probe(this)); }
 
   /** The app mounted, then its address kept: #about opens About, and the address follows the reader. */
   mount(element) {
@@ -224,7 +224,8 @@ export class TheHatch extends ChimeApp {
     this.chimes.follow({ region: Chimes.GLOBAL }, "figures", () => {
       const dj = this.workspace.dj.read();
       Frames.defer(() => {
-        if (dj && figured !== dj.id && this.myHeard.studio) { figured = dj.id; this.myHeard.loadDj(dj.id); }
+        // listener figures are an admin's alone
+        if (dj && figured !== dj.id && this.myHeard.studio && this.account.admin.read()) { figured = dj.id; this.myHeard.loadDj(dj.id); }
         if (!dj) figured = null;
       });
     });
@@ -333,8 +334,6 @@ export class TheHatch extends ChimeApp {
 
   home() {
     const ui = this.ui;
-    // shown to the public only once someone is listening; the admin's dashboard shows it whatever it is
-    const listening = this.station.listeners.map((count) => (!count ? null : Phrase.counted("%d listening", "%d listening", count)));
     const show = ui.bound(() => this.schedule.onAir());
     const title = show.map((held) => held?.title ?? STATION.name);
     const hosted = show.map((held) => (held && djsOf(held) ? Phrase.with("Hosted by %s", [djsOf(held)]) : null));
@@ -350,7 +349,7 @@ export class TheHatch extends ChimeApp {
           ui.text(show.map((held) => held?.description ?? ""), "OnAirAbout").wraps().hidesEmpty(),
           ui.text(track, "OnAirTrack").wraps().hidesEmpty(),
           ui.text(slot, "OnAirLine"),
-          ui.row([this.playButtons("BigPlay"), ui.text(listening, "OnAirCount").hidesEmpty()], "OnAirControls"),
+          ui.row([this.playButtons("BigPlay")], "OnAirControls"),
         ], "OnAirWords").grow(),
       ]),
       ui.column([
@@ -734,7 +733,7 @@ export class TheHatch extends ChimeApp {
     ], "Manager");
   }
 
-  /** The admin's first sight: what is on air, who is listening, what is waiting, and what needs doing. */
+  /** The admin's first sight: what is on air, how many are listening (shown to admins only, never to the public), what is waiting, and what needs doing. */
   dashboard() {
     const ui = this.ui;
     const library = this.library;
@@ -1026,16 +1025,16 @@ export class TheHatch extends ChimeApp {
           ui.pressable(OPENS_DJ, ui.bound(() => ({ parameter: work.dj.read()?.id })), [ui.text(Phrase.of("See the public page →"), "MoreWords")], "More").goesTo(DJ),
         ], "Actions"),
       ]),
-      ui.column([
-        ui.text(Phrase.of("Listeners: the last 90 days"), "SectionTitle"),
+      ui.when(this.account.admin, ui.column([
+        ui.text(Phrase.of("Listeners: the last 90 days (seen by admins only)"), "SectionTitle"),
         ui.row([
           ui.surface("Stat", [ui.text(ui.bound(() => String(this.myHeard.figures().peak)), "StatFigure"), ui.text(Phrase.of("the most listening at once"), "StatLabel")]),
           ui.surface("Stat", [ui.text(ui.bound(() => String(this.myHeard.figures().average)), "StatFigure"), ui.text(Phrase.of("listening on average, per show"), "StatLabel")]),
           ui.surface("Stat", [ui.text(ui.bound(() => String(this.myHeard.figures().shows)), "StatFigure"), ui.text(Phrase.of("shows counted"), "StatLabel")]),
         ], "Stats"),
-        ui.text(Phrase.of("Your shows heard most"), "Label"),
-        this.topShows(this.myHeard, Phrase.of("No figures yet: listeners are counted every five minutes while your shows are on.")),
-      ], "Section"),
+        ui.text(Phrase.of("Their shows heard most"), "Label"),
+        this.topShows(this.myHeard, Phrase.of("No figures yet: listeners are counted every five minutes while their shows are on.")),
+      ], "Section")),
       ui.column([
         ui.text(Phrase.of("Upcoming shows"), "SectionTitle"),
         ui.text(Phrase.of("Give each a picture. Shows without one use the station logo."), "Quiet").wraps(),

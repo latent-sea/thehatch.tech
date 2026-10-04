@@ -5,7 +5,7 @@
 // opens their own; an admin opens any DJ's from the admin's DJs. What may be
 // saved is decided on the platform (backend.sql).
 
-import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=6e80f466b292";
+import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=fc8f4b8b1b3f";
 
 export const SETS_NAME = "sets_the_dj_name";
 export const SETS_LOCATION = "sets_the_dj_location";
