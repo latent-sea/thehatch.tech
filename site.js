@@ -13,23 +13,23 @@
 // studio.js): what is on air, what is next and the week ahead follow the
 // clock (schedule.js). Every time is UK time, the station's.
 
-import { ChimeApp, Chimes, Controller, Driver, Frames, Look, Phrase, Ui } from "./gd_chime/gd_chime.js?v=48640e060f14";
-import { Player } from "./player/player.js?v=48640e060f14";
-import { STATION } from "./content.js?v=48640e060f14";
-import { HATCH } from "./palette.js?v=48640e060f14";
-import { STREAM, Station, askHost, quietAudio } from "./station.js?v=48640e060f14";
-import { Schedule, dateOf, dayAt, dayId, dayName, djsOf, genresOf, slotOf, timeOf, weekdayOf } from "./schedule.js?v=48640e060f14";
-import { Studio } from "./studio.js?v=48640e060f14";
-import { Account, SIGNS_OUT } from "./account.js?v=48640e060f14";
-import * as Desk from "./desk.js?v=48640e060f14";
-import { Library } from "./library.js?v=48640e060f14";
-import * as Work from "./workspace.js?v=48640e060f14";
-import * as Djs from "./admin_djs.js?v=48640e060f14";
-import * as Mail from "./letters.js?v=48640e060f14";
-import * as Box from "./inbox.js?v=48640e060f14";
-import * as Keep from "./settings.js?v=48640e060f14";
-import { Listeners } from "./listeners.js?v=48640e060f14";
-import * as Tracks from "./track_pictures.js?v=48640e060f14";
+import { ChimeApp, Chimes, Controller, Driver, Frames, Look, Phrase, Ui } from "./gd_chime/gd_chime.js?v=07f24e0a957b";
+import { Player } from "./player/player.js?v=07f24e0a957b";
+import { STATION } from "./content.js?v=07f24e0a957b";
+import { HATCH } from "./palette.js?v=07f24e0a957b";
+import { STREAM, Station, askHost, quietAudio } from "./station.js?v=07f24e0a957b";
+import { Schedule, dateOf, dayAt, dayId, dayName, djsOf, genresOf, slotOf, timeOf, weekdayOf } from "./schedule.js?v=07f24e0a957b";
+import { Studio } from "./studio.js?v=07f24e0a957b";
+import { Account, SIGNS_OUT } from "./account.js?v=07f24e0a957b";
+import * as Desk from "./desk.js?v=07f24e0a957b";
+import { Library } from "./library.js?v=07f24e0a957b";
+import * as Work from "./workspace.js?v=07f24e0a957b";
+import * as Djs from "./admin_djs.js?v=07f24e0a957b";
+import * as Mail from "./letters.js?v=07f24e0a957b";
+import * as Box from "./inbox.js?v=07f24e0a957b";
+import * as Keep from "./settings.js?v=07f24e0a957b";
+import { Listeners } from "./listeners.js?v=07f24e0a957b";
+import * as Tracks from "./track_pictures.js?v=07f24e0a957b";
 
 // the screens, by the address each is opened at
 const HOME = "home";
@@ -159,7 +159,7 @@ export class TheHatch extends ChimeApp {
   showPicture() { return this.schedule.onAir()?.picture || this.tracks.pictureFor(this.station.nowPlaying.read()); }
 
   // loaded only when the page is walked (?probe), so an export leaves it out
-  probe() { return import("./probe.js?v=48640e060f14").then((made) => new made.Probe(this)); }
+  probe() { return import("./probe.js?v=07f24e0a957b").then((made) => new made.Probe(this)); }
 
   /** The app mounted, then its address kept: #about opens About, and the address follows the reader. */
   mount(element) {
@@ -654,7 +654,8 @@ export class TheHatch extends ChimeApp {
           ui.file(Tracks.CHOOSES_PICTURE, Phrase.of("Choose a picture"), { accept: "image/*", style: "SecondaryButton" }),
         ], "DjAdminRow LinkRow"),
       ]),
-      ui.each(tracks.pictures, (held) => ui.row([
+      ui.when(tracks.pictures.map((all) => all.length > 0), ui.field(Tracks.SEARCHES, "", { label: Phrase.of("Search pictures"), changes: Tracks.SEARCHES, shows: tracks.search, placeholder: Phrase.of("An artist or a track"), kind: "search" })),
+      ui.each(ui.bound(() => tracks.shown()), (held) => ui.row([
         this.artwork("ShowThumb", held.map((picture) => picture?.picture_url ?? "")),
         ui.column([
           ui.text(held.map((picture) => picture?.words ?? ""), "ShowTitle").wraps(),
@@ -663,6 +664,7 @@ export class TheHatch extends ChimeApp {
         ui.button(Tracks.REMOVES_PICTURE, { payload: held.map((picture) => ({ id: picture?.id })), style: "SecondaryButton" }),
       ], "ShowRow"), (picture) => picture.id, "ShowList"),
       ui.when(tracks.pictures.map((all) => !all.length), ui.text(Phrase.of("No pictures yet."), "Quiet")),
+      ui.when(ui.bound(() => tracks.pictures.read().length > 0 && !tracks.shown().length), ui.text(Phrase.of("No pictures match."), "Quiet")),
     ], "Manager");
   }
 
