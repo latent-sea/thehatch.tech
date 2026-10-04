@@ -13,23 +13,23 @@
 // studio.js): what is on air, what is next and the week ahead follow the
 // clock (schedule.js). Every time is UK time, the station's.
 
-import { ChimeApp, Chimes, Controller, Driver, Frames, Look, Phrase, Ui } from "./gd_chime/gd_chime.js?v=386ff33fa206";
-import { Player } from "./player/player.js?v=386ff33fa206";
-import { STATION } from "./content.js?v=386ff33fa206";
-import { HATCH } from "./palette.js?v=386ff33fa206";
-import { STREAM, Station, askHost, quietAudio } from "./station.js?v=386ff33fa206";
-import { Schedule, dateOf, dayAt, dayId, dayName, djsOf, genresOf, slotOf, timeOf, weekdayOf } from "./schedule.js?v=386ff33fa206";
-import { Studio } from "./studio.js?v=386ff33fa206";
-import { Account, SIGNS_OUT } from "./account.js?v=386ff33fa206";
-import * as Desk from "./desk.js?v=386ff33fa206";
-import { Library } from "./library.js?v=386ff33fa206";
-import * as Work from "./workspace.js?v=386ff33fa206";
-import * as Djs from "./admin_djs.js?v=386ff33fa206";
-import * as Mail from "./letters.js?v=386ff33fa206";
-import * as Box from "./inbox.js?v=386ff33fa206";
-import * as Keep from "./settings.js?v=386ff33fa206";
-import { Listeners } from "./listeners.js?v=386ff33fa206";
-import * as Tracks from "./track_pictures.js?v=386ff33fa206";
+import { ChimeApp, Chimes, Controller, Driver, Frames, Look, Phrase, Ui } from "./gd_chime/gd_chime.js?v=6e80f466b292";
+import { Player } from "./player/player.js?v=6e80f466b292";
+import { STATION } from "./content.js?v=6e80f466b292";
+import { HATCH } from "./palette.js?v=6e80f466b292";
+import { STREAM, Station, askHost, quietAudio } from "./station.js?v=6e80f466b292";
+import { Schedule, dateOf, dayAt, dayId, dayName, djsOf, genresOf, slotOf, timeOf, weekdayOf } from "./schedule.js?v=6e80f466b292";
+import { Studio } from "./studio.js?v=6e80f466b292";
+import { Account, SIGNS_OUT } from "./account.js?v=6e80f466b292";
+import * as Desk from "./desk.js?v=6e80f466b292";
+import { Library } from "./library.js?v=6e80f466b292";
+import * as Work from "./workspace.js?v=6e80f466b292";
+import * as Djs from "./admin_djs.js?v=6e80f466b292";
+import * as Mail from "./letters.js?v=6e80f466b292";
+import * as Box from "./inbox.js?v=6e80f466b292";
+import * as Keep from "./settings.js?v=6e80f466b292";
+import { Listeners } from "./listeners.js?v=6e80f466b292";
+import * as Tracks from "./track_pictures.js?v=6e80f466b292";
 
 // the screens, by the address each is opened at
 const HOME = "home";
@@ -159,7 +159,7 @@ export class TheHatch extends ChimeApp {
   showPicture() { return this.schedule.onAir()?.picture || this.tracks.pictureFor(this.station.nowPlaying.read()); }
 
   // loaded only when the page is walked (?probe), so an export leaves it out
-  probe() { return import("./probe.js?v=386ff33fa206").then((made) => new made.Probe(this)); }
+  probe() { return import("./probe.js?v=6e80f466b292").then((made) => new made.Probe(this)); }
 
   /** The app mounted, then its address kept: #about opens About, and the address follows the reader. */
   mount(element) {
@@ -347,6 +347,7 @@ export class TheHatch extends ChimeApp {
           ui.row([ui.text(Phrase.of("On air"), "Live"), this.tags(show)], "OnAirTags"),
           ui.text(title, "OnAirTitle").wraps(),
           ui.text(hosted, "OnAirHost").hidesEmpty(),
+          ui.text(show.map((held) => held?.description ?? ""), "OnAirAbout").wraps().hidesEmpty(),
           ui.text(track, "OnAirTrack").wraps().hidesEmpty(),
           ui.text(slot, "OnAirLine"),
           ui.row([this.playButtons("BigPlay"), ui.text(listening, "OnAirCount").hidesEmpty()], "OnAirControls"),
@@ -361,16 +362,21 @@ export class TheHatch extends ChimeApp {
     ]);
   }
 
-  /** One show in a list: its time, its title, its DJs and genres, and whether it is on air. */
+  /** A show's picture: its own, else its first DJ's photo, else "" (the logo). */
+  pictureOf(show) { return show?.picture || show?.djs?.find((dj) => dj.picture_url)?.picture_url || ""; }
+
+  /** One show in a list: its picture, time, title, description, DJs and genres, and whether it is on air. */
   showRow(show, withDay = false) {
     const ui = this.ui;
     const time = show.map((held) => (held ? `${withDay ? `${dayName(held.starts, this.schedule.now.read())} ` : ""}${slotOf(held)}` : ""));
     const who = show.map((held) => (held ? djsOf(held) : ""));
     const live = ui.bound(() => this.schedule.isOnAir(show.read()));
     return ui.row([
-      ui.text(time, "ShowTime"),
+      this.artwork("ShowThumb", show.map((held) => this.pictureOf(held))),
       ui.column([
+        ui.text(time, "ShowTime"),
         ui.text(show.map((held) => held?.title ?? ""), "ShowTitle").wraps(),
+        ui.text(show.map((held) => held?.description ?? ""), "ShowAbout").wraps().hidesEmpty(),
         ui.text(who, "ShowWho").hidesEmpty(),
         this.tags(show),
       ], "ShowWords").grow(),
@@ -378,26 +384,42 @@ export class TheHatch extends ChimeApp {
     ], "ShowRow");
   }
 
+  /** One show in the schedule's grid: its picture square above its time, title, description, DJs and genres. */
+  showCard(show) {
+    const ui = this.ui;
+    const live = ui.bound(() => this.schedule.isOnAir(show.read()));
+    return ui.column([
+      this.artwork("CardArt", show.map((held) => this.pictureOf(held))),
+      ui.column([
+        ui.row([ui.text(show.map((held) => (held ? `${dayName(held.starts, this.schedule.now.read())} ${slotOf(held)}` : "")), "ShowTime").grow(), ui.when(live, ui.text(Phrase.of("On air"), "Live"))], "CardTop"),
+        ui.text(show.map((held) => held?.title ?? ""), "ShowTitle").wraps(),
+        ui.text(show.map((held) => held?.description ?? ""), "ShowAbout").wraps().hidesEmpty(),
+        ui.text(show.map((held) => (held ? djsOf(held) : "")), "ShowWho").hidesEmpty(),
+        this.tags(show),
+      ], "CardWords"),
+    ], "ShowCard");
+  }
+
   scheduleScreen() {
     const ui = this.ui;
     const schedule = this.schedule;
-    const choosing = new Choice(this.chimes, CHOOSES_SCHEDULE_DAY, dayId(schedule.now.read()));
+    const choosing = new Choice(this.chimes, CHOOSES_SCHEDULE_DAY, "all"); // all, week, or a day's id
     const day = choosing.chosen;
-    const days = ui.bound(() => schedule.days().map((date) => ({ id: dayId(date), date })));
+    const days = ui.bound(() => [{ id: "all", words: Phrase.of("All") }, { id: "week", words: Phrase.of("All week") }, ...schedule.days().map((date) => ({ id: dayId(date), date }))]);
     const loading = (state) => schedule.loading.map((now) => now === state);
-    const shows = ui.bound(() => schedule.on(day.read()));
+    const shows = ui.bound(() => (day.read() === "all" ? schedule.all() : day.read() === "week" ? schedule.week() : schedule.on(day.read())));
     return ui.screen(SCHEDULE, [
       ui.column([
         ui.text(Phrase.of("Schedule"), "PageTitle"),
         ui.text(Phrase.of("All times are UK time (London)."), "Quiet").wraps(),
       ], "PageHead"),
-      ui.eachAcross(days, (held) => ui.pressable(CHOOSES_SCHEDULE_DAY, held.map((d) => ({ choice: d?.id })), [ui.text(held.map((d) => (d ? dayName(d.date, schedule.now.read()) : "")), "DayWords")], "DayChoice")
+      ui.eachAcross(days, (held) => ui.pressable(CHOOSES_SCHEDULE_DAY, held.map((d) => ({ choice: d?.id })), [ui.text(held.map((d) => (d?.date ? dayName(d.date, schedule.now.read()) : d?.words ?? "")), "DayWords")], "DayChoice")
         .currentWhile(ui.bound(() => day.read() === held.read()?.id)), (d) => d.id, "Days"),
       ui.when(loading("loading"), ui.text(Phrase.of("Finding the schedule…"), "Quiet")),
       ui.when(loading("failed"), ui.column([ui.text(schedule.trouble, "Problem").wraps(), ui.button(RELOADS, { style: "SecondaryButton" })], "Trouble")),
-      ui.each(shows, (held) => this.showRow(held), (held) => held.id, "ShowList"),
+      ui.each(shows, (held) => this.showCard(held), (held) => held.id, "ShowGrid"),
       ui.when(ui.bound(() => schedule.loading.read() === "ready" && !shows.read().length),
-        ui.text(Phrase.of("Nothing scheduled this day. The stream plays on, 24/7."), "Quiet").wraps()),
+        ui.text(ui.bound(() => ({ all: Phrase.of("Nothing scheduled yet. The stream plays on, 24/7."), week: Phrase.of("Nothing scheduled this week. The stream plays on, 24/7.") })[day.read()] ?? Phrase.of("Nothing scheduled this day. The stream plays on, 24/7.")), "Quiet").wraps()),
     ], choosing);
   }
 
@@ -498,9 +520,11 @@ export class TheHatch extends ChimeApp {
     const ui = this.ui;
     const when = show.map((held) => (held ? dateOf(held.starts) : ""));
     return ui.row([
-      ui.text(when, "ShowTime"),
+      this.artwork("ShowThumb", show.map((held) => this.pictureOf(held))),
       ui.column([
+        ui.text(when, "ShowTime"),
         ui.text(show.map((held) => held?.title ?? ""), "ShowTitle").wraps(),
+        ui.text(show.map((held) => held?.description ?? ""), "ShowAbout").wraps().hidesEmpty(),
         ui.text(show.map((held) => (held ? djsOf(held) : "")), "ShowWho").hidesEmpty(),
         this.tags(show),
       ], "ShowWords").grow(),

@@ -64,6 +64,10 @@ body::after {
 @media (prefers-reduced-motion: reduce) { #app .Live::before { animation: none; } }
 
 /* where artwork goes: the station logo on black until the real artwork exists (site.js, artwork) */
+/* the text cursor shows only where one types, never on words */
+#app { caret-color: transparent; }
+#app input, #app textarea { caret-color: auto; }
+
 /* every picture is shown square, everywhere: a square one is shown whole */
 #app .Artwork { aspect-ratio: 1; position: relative; display: grid; place-items: center; align-content: center; gap: 0.75rem; padding: 1rem; background: #000; border: 1px solid var(--chime-edge); overflow: hidden; }
 #app .ArtworkLogo { width: min(45%, 9rem); height: auto; }
@@ -127,12 +131,23 @@ body::after {
 #app .SectionTitle { font-weight: 800; font-size: 1rem; }
 #app .chime-pressable.More { background: none; border: 0; min-height: 2rem; padding: 0; color: var(--chime-accent); font-size: 0.85rem; font-weight: 600; }
 #app .ShowList { gap: 0.45rem; }
-#app .ShowRow { gap: 1rem; align-items: center; padding: 0.7rem 0.9rem; background: var(--chime-raised); border: 1px solid var(--chime-edge); border-radius: var(--radius-s); }
+#app .ShowRow { gap: 1rem; align-items: flex-start; padding: 0.7rem 0.9rem; background: var(--chime-raised); border: 1px solid var(--chime-edge); border-radius: var(--radius-s); }
 #app .ShowRow:has(.Live) { border-color: var(--chime-accent); }
-#app .ShowTime { font-family: var(--mono); font-size: 0.8rem; color: var(--chime-ink); flex: none; min-width: 7.5rem; }
+#app .ShowTime { font-family: var(--mono); font-size: 0.8rem; color: var(--chime-ink); flex: none; }
 #app .ShowWords { gap: 0.2rem; }
 #app .ShowTitle { font-weight: 700; font-size: 0.95rem; }
 #app .ShowWho { font-size: 0.8rem; color: var(--chime-ink-soft); }
+#app .ShowAbout, #app .OnAirAbout { font-size: 0.85rem; color: var(--chime-ink-soft); white-space: pre-line; }
+#app .ShowRow .ShowAbout { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* ---- the schedule: a grid of shows, each its picture square above its words ---- */
+#app .ShowGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: 0.8rem; }
+#app .ShowCard { gap: 0; height: 100%; background: var(--chime-raised); border: 1px solid var(--chime-edge); border-radius: var(--radius); overflow: hidden; }
+#app .ShowCard:has(.Live) { border-color: var(--chime-accent); }
+#app .CardArt { border: 0; border-bottom: 1px solid var(--chime-edge); }
+#app .CardArt .ArtworkLogo { width: 4rem; }
+#app .CardWords { gap: 0.3rem; padding: 0.75rem 0.9rem 0.9rem; }
+#app .CardTop { gap: 0.5rem; align-items: center; }
 #app .chime-column > .Tag, #app .chime-each > .Tag { align-self: flex-start; }
 #app .Tags { gap: 0.35rem; flex-wrap: wrap; }
 #app .Tags:empty { display: none; }

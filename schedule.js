@@ -3,10 +3,12 @@
 // every minute, so what is on air and what is next follow the clock. Every
 // time is UK time - the station's - whoever is reading.
 
-import { Controller } from "./gd_chime/gd_chime.js?v=386ff33fa206";
+import { Controller } from "./gd_chime/gd_chime.js?v=6e80f466b292";
 
 /** How many days ahead the schedule shows, today included. */
 export const DAYS = 7;
+/** How far ahead the schedule is found, in days: everything coming up, as far as anyone plans. */
+export const AHEAD = 92;
 const MINUTE = 60 * 1000;
 
 /** The station's clock: every time on the site is UK time, whatever the reader's device says. */
@@ -43,13 +45,14 @@ const MONTHS = ["January", "February", "March", "April", "May", "June", "July", 
 export const weekdayOf = (date) => `${ukParts(date).weekday} ${ukParts(date).day}`;
 /** "Tue 19 March", in UK days. */
 export const dateOf = (date) => `${weekdayOf(date)} ${MONTHS[ukParts(date).month - 1]}`;
-/** "Tue 19", "Today", "Tomorrow", in UK days. */
+/** "Today", "Tomorrow", "Tue 19" in the week ahead, "Tue 19 March" beyond it, in UK days. */
 export function dayName(date, today) {
   const [a, b] = [dayId(date), dayId(today)].map((id) => { const [y, m, d] = id.split("-").map(Number); return Date.UTC(y, m - 1, d); });
   const ahead = Math.round((a - b) / (24 * 60 * MINUTE));
   if (ahead === 0) return "Today";
   if (ahead === 1) return "Tomorrow";
-  return weekdayOf(date);
+  // within the week ahead the weekday is enough; further, the month says which
+  return ahead > 1 && ahead < DAYS ? weekdayOf(date) : dateOf(date);
 }
 /** The DJs of a show, as words: "VELD", "VELD & Mara Voss", "VELD, Nyx & Mara Voss". */
 export function djsOf(show) {
@@ -86,7 +89,7 @@ export class Schedule extends Controller {
   load() {
     const asked = ++this._asked;
     const today = dayId(this.now.read());
-    const [first, last] = [dayAt(today, 0, 0), dayAt(today, DAYS, 0)];
+    const [first, last] = [dayAt(today, 0, 0), dayAt(today, AHEAD, 0)];
     // found again while shown, it stays shown: no flash of "finding", and a failure keeps what is there
     const shown = this.loading.read() === "ready";
     if (!shown) this.loading.setValue("loading");
@@ -117,6 +120,18 @@ export class Schedule extends Controller {
   upcoming(count = 3) {
     const now = this.now.read();
     return this.shows.read().filter((show) => show.starts > now).slice(0, count);
+  }
+
+  /** Every show coming up, and the one on air, in order. */
+  all() {
+    const now = this.now.read();
+    return this.shows.read().filter((show) => show.ends > now);
+  }
+
+  /** The week ahead's shows - today and the six days after - not already over. */
+  week() {
+    const days = new Set(this.days().map((date) => dayId(date)));
+    return this.all().filter((show) => days.has(dayId(show.starts)));
   }
 
   /** A day's shows, by its id ("2030-03-19"), not those already over. */
