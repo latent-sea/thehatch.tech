@@ -13,22 +13,23 @@
 // studio.js): what is on air, what is next and the week ahead follow the
 // clock (schedule.js). Every time is UK time, the station's.
 
-import { ChimeApp, Chimes, Controller, Driver, Frames, Look, Phrase, Ui } from "./gd_chime/gd_chime.js";
-import { Player } from "./player/player.js";
-import { STATION } from "./content.js";
-import { HATCH } from "./palette.js";
-import { STREAM, Station, askHost, quietAudio } from "./station.js";
-import { Schedule, dateOf, dayAt, dayId, dayName, djsOf, genresOf, slotOf, timeOf, weekdayOf } from "./schedule.js";
-import { Studio } from "./studio.js";
-import { Account, SIGNS_OUT } from "./account.js";
-import * as Desk from "./desk.js";
-import { Library } from "./library.js";
-import * as Work from "./workspace.js";
-import * as Djs from "./admin_djs.js";
-import * as Mail from "./letters.js";
-import * as Box from "./inbox.js";
-import * as Keep from "./settings.js";
-import { Listeners } from "./listeners.js";
+import { ChimeApp, Chimes, Controller, Driver, Frames, Look, Phrase, Ui } from "./gd_chime/gd_chime.js?v=48640e060f14";
+import { Player } from "./player/player.js?v=48640e060f14";
+import { STATION } from "./content.js?v=48640e060f14";
+import { HATCH } from "./palette.js?v=48640e060f14";
+import { STREAM, Station, askHost, quietAudio } from "./station.js?v=48640e060f14";
+import { Schedule, dateOf, dayAt, dayId, dayName, djsOf, genresOf, slotOf, timeOf, weekdayOf } from "./schedule.js?v=48640e060f14";
+import { Studio } from "./studio.js?v=48640e060f14";
+import { Account, SIGNS_OUT } from "./account.js?v=48640e060f14";
+import * as Desk from "./desk.js?v=48640e060f14";
+import { Library } from "./library.js?v=48640e060f14";
+import * as Work from "./workspace.js?v=48640e060f14";
+import * as Djs from "./admin_djs.js?v=48640e060f14";
+import * as Mail from "./letters.js?v=48640e060f14";
+import * as Box from "./inbox.js?v=48640e060f14";
+import * as Keep from "./settings.js?v=48640e060f14";
+import { Listeners } from "./listeners.js?v=48640e060f14";
+import * as Tracks from "./track_pictures.js?v=48640e060f14";
 
 // the screens, by the address each is opened at
 const HOME = "home";
@@ -99,6 +100,7 @@ export class TheHatch extends ChimeApp {
       [SIGNS_OUT]: ["Sign out"],
       [ASKS_TO_DELETE]: ["Delete"],
       ...Desk.WORDS,
+      ...Tracks.WORDS,
     });
   }
 
@@ -124,6 +126,7 @@ export class TheHatch extends ChimeApp {
     };
     this.inbox = this.model(new Box.Inbox(this.chimes, studio, djsChanged));
     this.words = this.model(new Keep.StationWords(this.chimes, studio));
+    this.tracks = this.model(new Tracks.TrackPictures(this.chimes, studio)); // pictures for what is playing between shows
     this.heard = this.model(new Listeners(this.chimes, studio)); // the station's, for the admin
     this.myHeard = this.model(new Listeners(this.chimes, studio)); // the DJ open in the workspace's
     this.settings = this.model(new Keep.Settings(this.chimes, studio, () => { changed(); if (this.words.studio) this.words.load(); }));
@@ -152,17 +155,51 @@ export class TheHatch extends ChimeApp {
     return show ? [show.title, djsOf(show)].filter(Boolean).join(" · ") : "";
   }
 
-  showPicture() { return this.schedule.onAir()?.picture || "";
-  }
+  /** The picture for what is on air: the show's own, else one an admin gave what is playing, else "" (the logo). */
+  showPicture() { return this.schedule.onAir()?.picture || this.tracks.pictureFor(this.station.nowPlaying.read()); }
 
   // loaded only when the page is walked (?probe), so an export leaves it out
-  probe() { return import("./probe.js").then((made) => new made.Probe(this)); }
+  probe() { return import("./probe.js?v=48640e060f14").then((made) => new made.Probe(this)); }
 
   /** The app mounted, then its address kept: #about opens About, and the address follows the reader. */
   mount(element) {
     super.mount(element);
-    this.started.then((stood) => { if (stood) { this.keepAddress(); this.keepAccount(); } });
+    this.started.then((stood) => { if (stood) { this.keepAddress(); this.keepAccount(); this.keepFresh(); } });
     return this;
+  }
+
+  /**
+   * What others change, found again: the schedule and the pictures for what
+   * is playing every minute while the page is in sight and whenever it comes
+   * back into sight; and, for an admin, the part they are on - again when they
+   * open it. Nothing being typed is found again (a profile, the words in
+   * Settings, an email not saved), so no one's work is written over.
+   */
+  keepFresh() {
+    const admin = () => this.account.admin.read() && this.desk.studio;
+    const part = (name) => {
+      if (!admin()) return;
+      if (name === "dashboard") { this.heard.loadStation(); this.inbox.load(); }
+      if (name === "schedule") { this.desk.loadShows(); this.desk.loadLists(); }
+      if (name === "djs") this.adminDjs.load();
+      if (name === "inbox") this.inbox.load();
+      if (name === "pictures") this.tracks.load();
+      if (name === "settings") this.settings.loadLists();
+    };
+    const everything = () => {
+      if (document.hidden) return;
+      if (this.schedule.studio) { this.schedule.load(); this.library.load(); }
+      if (this.tracks.studio) this.tracks.load();
+      part(this.part.chosen.read());
+      if (admin() && this.part.chosen.read() !== "inbox") this.inbox.load(); // its count is on its tab
+    };
+    let opened = this.part.chosen.read();
+    this.chimes.follow({ region: Chimes.GLOBAL }, "fresh", () => {
+      const now = this.part.chosen.read();
+      if (now !== opened) { opened = now; Frames.defer(() => part(now)); }
+    });
+    document.addEventListener("visibilitychange", everything);
+    setInterval(everything, 60 * 1000);
   }
 
   /** Google's button drawn whenever the sign-in shows; the admin's desk filled once an admin is signed in. */
@@ -576,13 +613,14 @@ export class TheHatch extends ChimeApp {
     const mine = ui.bound(() => this.account.dj.read());
     return ui.column([
       ui.row([
-        ui.column([ui.text(Phrase.of("Admin"), "Kicker"), ui.text(part.map((now) => ({ djs: Phrase.of("DJs"), inbox: Phrase.of("Inbox"), settings: Phrase.of("Station Settings"), workspace: Phrase.of("DJ profile"), dashboard: Phrase.of("Dashboard") })[now] ?? Phrase.of("Schedule Manager")), "PageTitle")], "PageHead").grow(),
+        ui.column([ui.text(Phrase.of("Admin"), "Kicker"), ui.text(part.map((now) => ({ djs: Phrase.of("DJs"), inbox: Phrase.of("Inbox"), settings: Phrase.of("Station Settings"), workspace: Phrase.of("DJ profile"), pictures: Phrase.of("Now playing pictures"), dashboard: Phrase.of("Dashboard") })[now] ?? Phrase.of("Schedule Manager")), "PageTitle")], "PageHead").grow(),
         ui.column([ui.text(this.account.name, "Quiet"), ui.button(SIGNS_OUT, { style: "SecondaryButton" })], "Who"),
       ], "AdminHead"),
       ui.row([
         tab("dashboard", Phrase.of("Dashboard")),
         tab("schedule", Phrase.of("Schedule")),
         tab("djs", Phrase.of("DJs")),
+        tab("pictures", Phrase.of("Pictures")),
         tab("settings", Phrase.of("Settings")),
         tab("inbox", ui.bound(() => { const waiting = this.inbox.unread() + this.inbox.pending().length; return waiting ? Phrase.with("Inbox (%d)", [waiting]) : Phrase.of("Inbox"); })),
         ui.when(mine, ui.pressable(Djs.EDITS_DJ, mine.map((dj) => ({ id: dj?.id })), [ui.text(Phrase.of("My DJ page"), "DayWords")], "DayChoice")),
@@ -592,10 +630,39 @@ export class TheHatch extends ChimeApp {
       ui.when(is("djs"), this.djsManager()),
       ui.when(is("inbox"), this.inboxView()),
       ui.when(is("settings"), this.settingsView()),
+      ui.when(is("pictures"), this.picturesView()),
       ui.when(is("workspace"), ui.column([
         ui.text(ui.bound(() => (this.workspace.dj.read() ? Phrase.with("Editing %s", [this.workspace.dj.read().name]) : Phrase.of("Opening…"))), "SectionTitle"),
         this.workspaceView(),
       ], "Manager")),
+    ], "Manager");
+  }
+
+  /** Pictures for what the stream plays between shows: words to match, and a picture for each. */
+  picturesView() {
+    const ui = this.ui;
+    const tracks = this.tracks;
+    return ui.column([
+      ui.text(Phrase.of("When no DJ is on, the stream plays on its own. Give a picture to an artist (for all their tracks) or to one track (Artist - Title): it shows on the Live screen while what is playing contains those words. A show's own picture always comes first."), "Quiet").wraps(),
+      ui.text(tracks.notice, "Notice").hidesEmpty(),
+      ui.text(tracks.problem, "Problem").wraps().hidesEmpty(),
+      ui.surface("Form", [
+        ui.text(Phrase.of("Add a picture"), "SectionTitle"),
+        ui.text(ui.bound(() => (this.station.nowPlaying.read() ? Phrase.with("Playing now: %s", [this.station.nowPlaying.read()]) : null)), "Quiet").wraps().hidesEmpty(),
+        ui.row([
+          ui.field(Tracks.SETS_WORDS, "", { label: Phrase.of("Artist, or Artist - Title"), placeholder: Phrase.of("Mara Voss"), changes: Tracks.SETS_WORDS, shows: tracks.words }),
+          ui.file(Tracks.CHOOSES_PICTURE, Phrase.of("Choose a picture"), { accept: "image/*", style: "SecondaryButton" }),
+        ], "DjAdminRow LinkRow"),
+      ]),
+      ui.each(tracks.pictures, (held) => ui.row([
+        this.artwork("ShowThumb", held.map((picture) => picture?.picture_url ?? "")),
+        ui.column([
+          ui.text(held.map((picture) => picture?.words ?? ""), "ShowTitle").wraps(),
+          ui.text(ui.bound(() => (held.read() && this.station.nowPlaying.read().toLowerCase().includes(held.read().words) ? Phrase.of("Matches what is playing now") : null)), "ShowWho").hidesEmpty(),
+        ], "ShowWords").grow(),
+        ui.button(Tracks.REMOVES_PICTURE, { payload: held.map((picture) => ({ id: picture?.id })), style: "SecondaryButton" }),
+      ], "ShowRow"), (picture) => picture.id, "ShowList"),
+      ui.when(tracks.pictures.map((all) => !all.length), ui.text(Phrase.of("No pictures yet."), "Quiet")),
     ], "Manager");
   }
 
@@ -897,6 +964,9 @@ export class TheHatch extends ChimeApp {
           ui.file(Work.CHOOSES_SHOW_PICTURE, Phrase.of("Choose a picture"), { accept: "image/*", payload: show.map((held) => ({ id: held?.id })), style: "SecondaryButton" }),
           ui.button(Work.REMOVES_SHOW_PICTURE, { payload: show.map((held) => ({ id: held?.id })), style: "SecondaryButton" }).absentWhenRefused(),
         ], "Actions"),
+        ui.text(Phrase.of("Description"), "Label"),
+        ui.area(Work.SETS_DESCRIPTION, ui.bound(() => work.descriptions.read()[show.read()?.id] ?? ""), "TextArea", { carries: (line) => ({ id: show.read()?.id, line }) }),
+        ui.row([ui.button(Work.SAVES_DESCRIPTION, { payload: show.map((held) => ({ id: held?.id })), style: "SecondaryButton" }).absentWhenRefused()], "Actions"),
         past ? ui.row([
           ui.field(Work.SETS_RECORDING, "", { label: Phrase.of("Recording link (Mixcloud, SoundCloud…)"), kind: "url", placeholder: Phrase.of("https://"),
             changes: Work.SETS_RECORDING, carries: (line) => ({ id: show.read()?.id, line }), shows: ui.bound(() => work.drafts.read()[show.read()?.id] ?? "") }),
@@ -1017,13 +1087,13 @@ export class TheHatch extends ChimeApp {
         ui.field(Desk.SETS_TO, "", { label: Phrase.of("Ends (UK time)"), kind: "time", changes: Desk.SETS_TO, shows: desk.to }),
       ], "FormRow"),
       ui.text(nextDay, "Quiet").hidesEmpty(),
-      ui.text(Phrase.of("DJs"), "Label"),
+      ui.text(Phrase.of("DJs (choose more than one for back to back: each can edit the show)"), "Label"),
       chips(desk.djs, desk.chosenDjs, Desk.TOGGLES_DJ),
       ui.field(Desk.ADDS_DJ, "", { label: Phrase.of("A DJ not on the list"), placeholder: Phrase.of("Their name, then Enter") }),
       ui.text(Phrase.of("Genres"), "Label"),
       chips(desk.genres, desk.chosenGenres, Desk.TOGGLES_GENRE),
       ui.field(Desk.ADDS_GENRE, "", { label: Phrase.of("A genre not on the list"), placeholder: Phrase.of("The genre, then Enter") }),
-      ui.text(Phrase.of("Description"), "Label"),
+      ui.text(Phrase.of("Description (optional: the show's DJs can write it themselves)"), "Label"),
       ui.area(Desk.SETS_WORDS, desk.words),
       ui.when(isNew, ui.field(Desk.SETS_REPEAT, "", { label: Phrase.of("Repeat weekly for how many more weeks? 0 for a one-off"), kind: "number", changes: Desk.SETS_REPEAT, shows: desk.repeat })),
       ui.text(desk.problem, "Problem").wraps().hidesEmpty(),

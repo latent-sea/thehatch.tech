@@ -64,7 +64,8 @@ body::after {
 @media (prefers-reduced-motion: reduce) { #app .Live::before { animation: none; } }
 
 /* where artwork goes: the station logo on black until the real artwork exists (site.js, artwork) */
-#app .Artwork { position: relative; display: grid; place-items: center; align-content: center; gap: 0.75rem; padding: 1rem; background: #000; border: 1px solid var(--chime-edge); overflow: hidden; }
+/* every picture is shown square, everywhere: a square one is shown whole */
+#app .Artwork { aspect-ratio: 1; position: relative; display: grid; place-items: center; align-content: center; gap: 0.75rem; padding: 1rem; background: #000; border: 1px solid var(--chime-edge); overflow: hidden; }
 #app .ArtworkLogo { width: min(45%, 9rem); height: auto; }
 #app .Cover .ArtworkLogo { width: 70%; }
 #app .Cover { padding: 0; }
@@ -147,7 +148,7 @@ body::after {
 #app .DjGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0.8rem; }
 #app .chime-pressable.DjCard { flex-direction: column; align-items: stretch; gap: 0; padding: 0; background: var(--chime-raised); border: 1px solid var(--chime-edge); border-radius: var(--radius); overflow: hidden; }
 #app .chime-pressable.DjCard:hover { border-color: var(--chime-accent); background: var(--chime-raised); }
-#app .DjCardArt { aspect-ratio: 16 / 10; border: 0; border-bottom: 1px solid var(--chime-edge); }
+#app .DjCardArt { aspect-ratio: 1; border: 0; border-bottom: 1px solid var(--chime-edge); }
 #app .DjCardArt .ArtworkLogo { width: 4rem; }
 #app .DjCardWords { gap: 0.25rem; padding: 0.75rem 0.9rem 0.9rem; }
 #app .DjNameRow { gap: 0.6rem; flex-wrap: wrap; }
@@ -244,7 +245,7 @@ body::after {
   #app .TopNav { gap: 0.6rem; }
   #app .Wordmark { display: none; }
   #app .OnAir { grid-template-columns: minmax(0, 1fr); }
-  #app .OnAirArt, #app .HeroArt { aspect-ratio: auto; padding: 1.5rem 1rem; }
+  #app .OnAirArt, #app .HeroArt { width: min(100%, 22rem); justify-self: center; }
   #app .OnAirArt .ArtworkLogo, #app .HeroArt .ArtworkLogo { width: 6rem; }
   #app .Hero { grid-template-columns: minmax(0, 1fr); }
   #app .ShowRow { flex-wrap: wrap; gap: 0.4rem 1rem; }

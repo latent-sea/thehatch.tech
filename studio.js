@@ -6,9 +6,9 @@
 // Signing in is with Google (backend/google.js): the platform sends no
 // email yet, so a code by email can't be offered.
 
-import { Backend } from "./backend/backend.js";
-import { drawGoogleButton } from "./backend/google.js";
-import { shrinkPicture } from "./backend/pictures.js";
+import { Backend } from "./backend/backend.js?v=48640e060f14";
+import { drawGoogleButton } from "./backend/google.js?v=48640e060f14";
+import { shrinkPicture } from "./backend/pictures.js?v=48640e060f14";
 
 // public: the platform's address and its publishable key belong in the page
 const PLATFORM = "https://api.latent-sea.com";
@@ -253,6 +253,27 @@ export class Studio {
   async updateShow(id, { picture = null, recording = null }) {
     return answer(await this.backend.callRpc("the_hatch_update_my_show", { show_id: id, picture_url: picture, recording_url: recording }));
   }
+
+  /** A show's description, written by one of its DJs or an admin ('' leaves it blank). */
+  async describeShow(id, description) {
+    return answer(await this.backend.callRpc("the_hatch_describe_my_show", { show_id: id, description }));
+  }
+
+  // --- pictures for what is playing between shows ---
+
+  /** Each { id, words, picture_url }: shown while "now playing" contains its words. */
+  async trackPictures() { return answer(await this.backend.select("the_hatch_track_pictures", "select=id,words,picture_url&order=words")); }
+
+  /** A picture uploaded and kept for the words given. */
+  async addTrackPicture(words, file) {
+    const kept = await this.uploadPicture(`track-${crypto.randomUUID()}.jpg`, file);
+    if (!kept.ok) return kept;
+    const reply = await this.backend.insert("the_hatch_track_pictures", { words: words.trim().toLowerCase(), picture_url: kept.data });
+    if (reply.status === 409) return { ok: false, data: null, error: "There's a picture for those words already" };
+    return answer(reply);
+  }
+
+  async deleteTrackPicture(id) { return answer(await this.backend.delete("the_hatch_track_pictures", `id=eq.${encodeURIComponent(id)}`)); }
 
   // --- the admin's DJs ---
 

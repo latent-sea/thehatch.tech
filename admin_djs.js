@@ -4,7 +4,7 @@
 // their page (the_hatch_claim) - or taken off the list. Their profiles are
 // edited in the same workspace a DJ uses for their own (workspace.js).
 
-import { Controller, Phrase } from "./gd_chime/gd_chime.js";
+import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=48640e060f14";
 
 export const ADDS_NEW_DJ = "adds_a_new_dj";
 export const TOGGLES_RESIDENT = "toggles_resident";
@@ -36,6 +36,7 @@ export class AdminDjs extends Controller {
     this.djs = this.value([]);
     this.accounts = this.value({}); // dj id -> { invite_email, account_email }
     this.emails = this.value({}); // dj id -> an email as typed
+    this.typed = new Set(); // the DJs whose email is typed and not saved: kept when the list is found again
     this.busy = this.value(false);
     this.problem = this.value("");
     this.notice = this.value("");
@@ -48,7 +49,8 @@ export class AdminDjs extends Controller {
     if (accounts.ok) {
       const held = Object.fromEntries(accounts.data.map((row) => [row.dj_id, { invite: row.invite_email ?? "", account: row.account_email ?? "" }]));
       this.accounts.setValue(held);
-      this.emails.setValue(Object.fromEntries(Object.entries(held).map(([id, row]) => [id, row.invite])));
+      const typed = this.emails.read();
+      this.emails.setValue(Object.fromEntries(Object.entries(held).map(([id, row]) => [id, this.typed.has(id) ? typed[id] : row.invite])));
     }
     if (!found.ok || !accounts.ok) this.problem.setValue(found.error || accounts.error);
   }
@@ -82,10 +84,11 @@ export class AdminDjs extends Controller {
       if (!name) return Phrase.of("A DJ needs a name");
       this.change(() => this.studio.addDj(name), () => `${name} added: give them their sign-in email below`);
     }
-    if (action === SETS_DJ_EMAIL) this.emails.update((emails) => ({ ...emails, [payload.id]: payload.line }));
+    if (action === SETS_DJ_EMAIL) { this.typed.add(payload.id); this.emails.update((emails) => ({ ...emails, [payload.id]: payload.line })); }
     if (action === TOGGLES_RESIDENT && dj) this.change(() => this.studio.setResident(dj.id, !dj.resident), () => (dj.resident ? `${dj.name} is no longer a resident` : `${dj.name} is a resident`));
     if (action === SAVES_DJ_EMAIL && dj) {
       const email = (this.emails.read()[dj.id] ?? "").trim().toLowerCase();
+      this.typed.delete(dj.id);
       this.change(() => this.studio.inviteDj(dj.id, email), (linked) => {
         if (!email) return `${dj.name}'s invite taken back`;
         return linked ? `${dj.name} is linked: they've signed in with ${email} before` : `Saved: when ${dj.name} signs in with Google as ${email}, they get their page`;

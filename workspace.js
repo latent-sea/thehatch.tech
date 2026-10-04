@@ -1,10 +1,11 @@
 // A DJ's workspace: their profile - photo, name, where they are, bio, links
-// and genre tags - and their shows, each given a picture and, once it has
-// been on, a link to its recording (Mixcloud, SoundCloud, wherever). A DJ
+// and genre tags - and their shows (theirs whoever else plays on them), each
+// given a picture and a description and, once it has been on, a link to its
+// recording (Mixcloud, SoundCloud, wherever). A DJ
 // opens their own; an admin opens any DJ's from the admin's DJs. What may be
 // saved is decided on the platform (backend.sql).
 
-import { Controller, Phrase } from "./gd_chime/gd_chime.js";
+import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=48640e060f14";
 
 export const SETS_NAME = "sets_the_dj_name";
 export const SETS_LOCATION = "sets_the_dj_location";
@@ -17,6 +18,8 @@ export const CHOOSES_SHOW_PICTURE = "chooses_a_show_picture";
 export const SETS_RECORDING = "sets_a_recording";
 export const SAVES_RECORDING = "saves_a_recording";
 export const REMOVES_SHOW_PICTURE = "removes_a_show_picture";
+export const SETS_DESCRIPTION = "sets_a_show_description";
+export const SAVES_DESCRIPTION = "saves_a_show_description";
 
 export const WORDS = {
   [SETS_NAME]: ["Name"],
@@ -30,6 +33,8 @@ export const WORDS = {
   [SETS_RECORDING]: ["Recording link"],
   [SAVES_RECORDING]: ["Save link"],
   [REMOVES_SHOW_PICTURE]: ["Use the logo"],
+  [SETS_DESCRIPTION]: ["Description"],
+  [SAVES_DESCRIPTION]: ["Save description"],
 };
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -61,6 +66,7 @@ export class Workspace extends Controller {
     this.genres = this.value([]);
     this.shows = this.value([]);
     this.drafts = this.value({}); // show id -> the recording link as typed
+    this.descriptions = this.value({}); // show id -> its description as typed
     this.busy = this.value(false);
     this.problem = this.value("");
     this.notice = this.value("");
@@ -86,6 +92,7 @@ export class Workspace extends Controller {
     if (genres.ok) this.genres.setValue(genres.data);
     if (shows.ok) this.shows.setValue(shows.shows);
     this.drafts.setValue(Object.fromEntries((shows.shows ?? []).map((show) => [show.id, show.recording])));
+    this.descriptions.setValue(Object.fromEntries((shows.shows ?? []).map((show) => [show.id, show.description])));
     if (!genres.ok || !shows.ok) this.problem.setValue(genres.error || shows.error);
   }
 
@@ -107,7 +114,7 @@ export class Workspace extends Controller {
   answers() { return Object.keys(WORDS); }
 
   would(action, payload) {
-    if ([SAVES_PROFILE, CHOOSES_PHOTO, CHOOSES_SHOW_PICTURE, SAVES_RECORDING, REMOVES_SHOW_PICTURE].includes(action) && this.busy.read()) return Phrase.of("Saving");
+    if ([SAVES_PROFILE, CHOOSES_PHOTO, CHOOSES_SHOW_PICTURE, SAVES_RECORDING, REMOVES_SHOW_PICTURE, SAVES_DESCRIPTION].includes(action) && this.busy.read()) return Phrase.of("Saving");
     if (action === SAVES_PROFILE) {
       if (!this.name.read().trim()) return Phrase.of("Your DJ name, please");
       const bad = linksFrom(this.links.read()).find((link) => !WEB_LINK.test(link.url));
@@ -120,6 +127,12 @@ export class Workspace extends Controller {
       if (show && link === show.recording) return Phrase.of("Nothing to save");
       if (link && !WEB_LINK.test(link)) return Phrase.of("A web link, please (https://...)");
     }
+    if (action === SAVES_DESCRIPTION) {
+      const words = (this.descriptions.read()[payload?.id] ?? "").trim();
+      const show = this.shows.read().find((held) => held.id === payload?.id);
+      if (show && words === show.description) return Phrase.of("Nothing to save");
+      if (words.length > 2000) return Phrase.of("2000 characters at most");
+    }
     if (action === REMOVES_SHOW_PICTURE && !this.shows.read().find((held) => held.id === payload?.id)?.picture) return Phrase.of("It has the logo");
     return null;
   }
@@ -131,6 +144,11 @@ export class Workspace extends Controller {
     if (action === SETS_BIO) this.bio.setValue(payload.line);
     if (action === SETS_LINKS) this.links.setValue(payload.line);
     if (action === TOGGLES_GENRE) this.genreIds.update((ids) => (ids.includes(payload.id) ? ids.filter((id) => id !== payload.id) : [...ids, payload.id]));
+    if (action === SETS_DESCRIPTION) this.descriptions.update((all) => ({ ...all, [payload.id]: payload.line }));
+    if (action === SAVES_DESCRIPTION) {
+      const words = (this.descriptions.read()[payload.id] ?? "").trim();
+      this.change(() => this.studio.describeShow(payload.id, words), () => this.showChanged(payload.id, { description: words }, words ? "Description saved" : "Description cleared"));
+    }
     if (action === SETS_RECORDING) this.drafts.update((drafts) => ({ ...drafts, [payload.id]: payload.line }));
     if (action === CHOOSES_PHOTO) return this.photo(payload.file);
     if (action === CHOOSES_SHOW_PICTURE) return this.showPicture(payload.id, payload.file);

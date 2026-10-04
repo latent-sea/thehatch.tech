@@ -6,9 +6,9 @@
 // they first do), removed, never the last. Until
 // the platform answers, the words are content.js's.
 
-import { Controller, Phrase } from "./gd_chime/gd_chime.js";
-import { STATION } from "./content.js";
-import { EMAIL } from "./admin_djs.js";
+import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=48640e060f14";
+import { STATION } from "./content.js?v=48640e060f14";
+import { EMAIL } from "./admin_djs.js?v=48640e060f14";
 
 /** What visitors read: found once as the page opens, and again when an admin saves. */
 export class StationWords extends Controller {
@@ -94,6 +94,18 @@ export class Settings extends Controller {
     if (genres.ok) { this.genres.setValue(genres.data); this.names.setValue(Object.fromEntries(genres.data.map((genre) => [genre.id, genre.name]))); }
     if (admins.ok) this.admins.setValue(admins.data);
     if (!settings.ok || !genres.ok || !admins.ok) this.problem.setValue(settings.error || genres.error || admins.error);
+  }
+
+  /** The genres and the admins found again, as others may have changed them; the words being typed are left as they are. */
+  async loadLists() {
+    const [genres, admins] = await Promise.all([this.studio.genres(), this.studio.admins()]);
+    if (this.disposed) return;
+    if (genres.ok) {
+      const typed = this.names.read();
+      this.genres.setValue(genres.data);
+      this.names.setValue(Object.fromEntries(genres.data.map((genre) => [genre.id, typed[genre.id] ?? genre.name])));
+    }
+    if (admins.ok) this.admins.setValue(admins.data);
   }
 
   answers() { return Object.keys(WORDS); }

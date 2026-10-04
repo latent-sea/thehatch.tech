@@ -3,7 +3,7 @@
 // through the door like any other. Plain JavaScript, one ES module, on
 // gd-chime for the web (../gd_chime/, beside it in a site as in web/).
 //
-//     import { Player } from "./player/player.js";
+//     import { Player } from "./player/player.js?v=48640e060f14";
 //
 //     declare(register) { register.declareAll(Player.WORDS); }
 //     describe() {
@@ -25,7 +25,7 @@
 // Session API, where the browser has it). Given media, a bound value reading
 // { title, artist, artwork }, the phone shows what is playing.
 
-import { Chimes, Controller, Phrase } from "../gd_chime/gd_chime.js";
+import { Chimes, Controller, Phrase } from "../gd_chime/gd_chime.js?v=48640e060f14";
 
 export class Player extends Controller {
   static PLAYS = "plays_the_stream";
@@ -74,6 +74,9 @@ export class Player extends Controller {
     };
     for (const [event, heard] of Object.entries(this._heard)) this._audio.addEventListener(event, heard);
     this._handOver();
+    // said on the page, for what would reload it (an exported site's fresh.js): not while the stream is wanted
+    const root = globalThis.document?.documentElement;
+    if (root) this.follow("said", () => { if (this.listening.read()) root.dataset.playing = "yes"; else delete root.dataset.playing; });
     if (options.media) this.follow("media", () => this._show(options.media.read()));
   }
 

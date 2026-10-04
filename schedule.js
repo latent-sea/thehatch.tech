@@ -3,7 +3,7 @@
 // every minute, so what is on air and what is next follow the clock. Every
 // time is UK time - the station's - whoever is reading.
 
-import { Controller } from "./gd_chime/gd_chime.js";
+import { Controller } from "./gd_chime/gd_chime.js?v=48640e060f14";
 
 /** How many days ahead the schedule shows, today included. */
 export const DAYS = 7;
@@ -87,9 +87,12 @@ export class Schedule extends Controller {
     const asked = ++this._asked;
     const today = dayId(this.now.read());
     const [first, last] = [dayAt(today, 0, 0), dayAt(today, DAYS, 0)];
-    this.loading.setValue("loading");
+    // found again while shown, it stays shown: no flash of "finding", and a failure keeps what is there
+    const shown = this.loading.read() === "ready";
+    if (!shown) this.loading.setValue("loading");
     return this.studio.schedule(first, last).then((found) => {
       if (asked !== this._asked || this.disposed) return;
+      if (!found.ok && shown) return;
       if (!found.ok) { this.loading.setValue("failed"); this.trouble.setValue(found.error); return; }
       this.received(found.shows);
     });
