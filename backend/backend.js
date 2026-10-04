@@ -202,6 +202,16 @@ export class Backend extends Speaker {
     return this._refreshing;
   }
 
+  /**
+   * The signed-in player's access token, refreshed first if it is about to
+   * run out, for a request made outside this client (a world's files): "" if
+   * nobody is signed in.
+   */
+  async accessToken() {
+    if (this._refreshing || this._expiring()) await this.refresh();
+    return this.isSignedIn() ? String(this.session.access_token) : "";
+  }
+
   async signOut() {
     if (this.isSignedIn()) await this._call("POST", `${this.url}/auth/v1/logout`, null);
     this._forget();
