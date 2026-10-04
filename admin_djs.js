@@ -4,7 +4,7 @@
 // their page (the_hatch_claim) - or taken off the list. Their profiles are
 // edited in the same workspace a DJ uses for their own (workspace.js).
 
-import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=07f24e0a957b";
+import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=386ff33fa206";
 
 export const ADDS_NEW_DJ = "adds_a_new_dj";
 export const TOGGLES_RESIDENT = "toggles_resident";

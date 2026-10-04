@@ -24,17 +24,17 @@
 // is a function of the parameter it is entered with, handed in as a bound
 // value. Every pop-up owns its way out: CLOSES, which goes back.
 
-import { Bound } from "./bound.js?v=07f24e0a957b";
-import { Chimes } from "./chimes.js?v=07f24e0a957b";
-import { Desc } from "./desc.js?v=07f24e0a957b";
-import { Driver } from "./driver.js?v=07f24e0a957b";
-import { Frames } from "./frames.js?v=07f24e0a957b";
-import { Language } from "./language.js?v=07f24e0a957b";
-import { OwnBell } from "./own_bell.js?v=07f24e0a957b";
-import { Phrase } from "./phrase.js?v=07f24e0a957b";
-import { Place } from "./place.js?v=07f24e0a957b";
-import { Pressables, Themes } from "./themes.js?v=07f24e0a957b";
-import { Value } from "./value.js?v=07f24e0a957b";
+import { Bound } from "./bound.js?v=386ff33fa206";
+import { Chimes } from "./chimes.js?v=386ff33fa206";
+import { Desc } from "./desc.js?v=386ff33fa206";
+import { Driver } from "./driver.js?v=386ff33fa206";
+import { Frames } from "./frames.js?v=386ff33fa206";
+import { Language } from "./language.js?v=386ff33fa206";
+import { OwnBell } from "./own_bell.js?v=386ff33fa206";
+import { Phrase } from "./phrase.js?v=386ff33fa206";
+import { Place } from "./place.js?v=386ff33fa206";
+import { Pressables, Themes } from "./themes.js?v=386ff33fa206";
+import { Value } from "./value.js?v=386ff33fa206";
 
 const DRAWN = "drawn";
 let fieldsMade = 0; // every field's own id, so its label names it
@@ -689,8 +689,14 @@ const BUILDERS = {
             ui.build(ui.describeWith(template, handle), piece);
             kept.set(k, piece);
           }
-          made.appendChild(kept.get(k));
         });
+        // put in order, moving only what is out of place: a piece moved loses the focus, so one typed in mustn't be
+        let next = made.firstChild;
+        for (const k of wanted) {
+          const piece = kept.get(k);
+          if (piece === next) next = next.nextSibling;
+          else made.insertBefore(piece, next);
+        }
       } finally {
         ui._place = saved;
       }
