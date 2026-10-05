@@ -4,7 +4,7 @@
 // admin's and has a DJ profile. No one ever handles an account id: an
 // account that is neither is told to ask an admin to invite its email.
 
-import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=273553db3592";
+import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=0d17fe3039de";
 
 export const SIGNS_OUT = "signs_out";
 
@@ -21,7 +21,13 @@ export class Account extends Controller {
     this.dj = this.value(null); // the account's DJ profile, or null
     this.problem = this.value("");
     // a guest - a visitor who sent a message - is not signed in, as far as anyone can see
-    if (studio) this.studio.restore().then((signed) => (signed && !this.studio.isGuest() ? this.signedIn() : this.state.setValue("out")));
+    // back from Google on a phone: its answer signs in; else whoever was signed in before
+    const google = studio ? this.studio.googleAnswer() : null;
+    if (google?.credential) this.signInWithGoogle(google.credential, google.nonce).then(() => { if (this.state.read() !== "in") this.state.setValue("out"); });
+    else if (studio) {
+      if (google?.error) this.problem.setValue(google.error);
+      this.studio.restore().then((signed) => (signed && !this.studio.isGuest() ? this.signedIn() : this.state.setValue("out")));
+    }
   }
 
   answers() { return [SIGNS_OUT]; }

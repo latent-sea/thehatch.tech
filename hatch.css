@@ -200,6 +200,8 @@ body::after {
 /* Google's button is a light page in a frame: on a dark page the browser paints that frame white
    unless it is told the frame's ground is light too, which leaves it transparent */
 #app .GoogleButton { padding: 0; min-height: 44px; background: transparent; color-scheme: light; }
+/* on a phone: a plain button to Google and back in the same tab (backend/google.js) */
+#app .GoogleButton .google-redirect { min-height: 44px; padding: 0 1.4rem; border: 1px solid #dadce0; border-radius: 999px; background: #fff; color: #1f1f1f; font: 600 0.95rem/1 var(--chime-font, inherit); cursor: pointer; }
 #app .Manager { gap: 0.9rem; }
 #app .AdminHead { gap: 1rem; align-items: flex-end; flex-wrap: wrap; }
 #app .Who { gap: 0.4rem; align-items: flex-end; }

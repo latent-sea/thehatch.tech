@@ -6,9 +6,9 @@
 // Signing in is with Google (backend/google.js): the platform sends no
 // email yet, so a code by email can't be offered.
 
-import { Backend } from "./backend/backend.js?v=273553db3592";
-import { drawGoogleButton } from "./backend/google.js?v=273553db3592";
-import { shrinkPicture } from "./backend/pictures.js?v=273553db3592";
+import { Backend } from "./backend/backend.js?v=0d17fe3039de";
+import { drawSignIn, takeGoogleRedirect } from "./backend/google.js?v=0d17fe3039de";
+import { shrinkPicture } from "./backend/pictures.js?v=0d17fe3039de";
 
 // public: the platform's address and its publishable key belong in the page
 const PLATFORM = "https://api.latent-sea.com";
@@ -181,7 +181,10 @@ export class Studio {
     return user.user_metadata?.full_name || user.user_metadata?.name || user.email || "";
   }
 
-  drawGoogleButton(element, signedIn) { return drawGoogleButton(element, GOOGLE_CLIENT, signedIn, { theme: "filled_black" }); }
+  drawGoogleButton(element, signedIn) { return drawSignIn(element, GOOGLE_CLIENT, signedIn, { theme: "filled_black" }); }
+
+  /** Google's answer, if the page has just come back from signing in with it on a phone: { credential, nonce } or { error }, else null. */
+  googleAnswer() { return takeGoogleRedirect(); }
 
   async signInWithGoogle(credential, nonce) { return answer(await this.backend.signInWithGoogleToken(credential, nonce)); }
 
