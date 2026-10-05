@@ -4,7 +4,8 @@
 // their page (the_hatch_claim) - or taken off the list. Their profiles are
 // edited in the same workspace a DJ uses for their own (workspace.js).
 
-import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=fc8f4b8b1b3f";
+import { renew } from "./renew.js?v=f905a68000af";
+import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=f905a68000af";
 
 export const ADDS_NEW_DJ = "adds_a_new_dj";
 export const TOGGLES_RESIDENT = "toggles_resident";
@@ -45,12 +46,12 @@ export class AdminDjs extends Controller {
   async load() {
     const [found, accounts] = await Promise.all([this.studio.djList(), this.studio.djAccounts()]);
     if (this.disposed) return;
-    if (found.ok) this.djs.setValue(found.data);
+    if (found.ok) renew(this.djs, found.data);
     if (accounts.ok) {
       const held = Object.fromEntries(accounts.data.map((row) => [row.dj_id, { invite: row.invite_email ?? "", account: row.account_email ?? "" }]));
-      this.accounts.setValue(held);
+      renew(this.accounts, held);
       const typed = this.emails.read();
-      this.emails.setValue(Object.fromEntries(Object.entries(held).map(([id, row]) => [id, this.typed.has(id) ? typed[id] : row.invite])));
+      renew(this.emails, Object.fromEntries(Object.entries(held).map(([id, row]) => [id, this.typed.has(id) ? typed[id] : row.invite])));
     }
     if (!found.ok || !accounts.ok) this.problem.setValue(found.error || accounts.error);
   }

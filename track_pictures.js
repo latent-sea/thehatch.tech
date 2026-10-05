@@ -4,7 +4,8 @@
 // ignoring case; when more than one match, the longest words win. A show's
 // own picture, while it is on air, comes first (site.js, showPicture).
 
-import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=fc8f4b8b1b3f";
+import { renew } from "./renew.js?v=f905a68000af";
+import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=f905a68000af";
 
 export const SETS_WORDS = "sets_the_track_words";
 export const CHOOSES_PICTURE = "chooses_a_track_picture";
@@ -44,7 +45,7 @@ export class TrackPictures extends Controller {
   async load() {
     const found = await this.studio.trackPictures();
     if (this.disposed) return;
-    if (found.ok) this.pictures.setValue(found.data);
+    if (found.ok) renew(this.pictures, found.data);
   }
 
   /** The pictures whose words hold what is searched for, all when nothing is. */

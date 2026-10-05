@@ -3,7 +3,8 @@
 // Again), and the last month's shows, recorded or not (the admin's to-dos). Found once as the page opens, and again when an admin or DJ
 // changes something. The screens filter them as the reader asks.
 
-import { Controller } from "./gd_chime/gd_chime.js?v=fc8f4b8b1b3f";
+import { renew } from "./renew.js?v=f905a68000af";
+import { Controller } from "./gd_chime/gd_chime.js?v=f905a68000af";
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -25,7 +26,9 @@ export class Library extends Controller {
   async load() {
     const asked = ++this._asked;
     const now = new Date();
-    this.loading.setValue("loading");
+    // found again while shown, it stays shown: no flash of "finding", and a failure keeps what is there
+    const shown = this.loading.read() === "ready";
+    if (!shown) this.loading.setValue("loading");
     const [djs, ahead, archive, recent] = await Promise.all([
       this.studio.djList(),
       this.studio.findShows({ from: now, to: new Date(now.getTime() + 31 * DAY) }),
@@ -34,16 +37,17 @@ export class Library extends Controller {
     ]);
     if (asked !== this._asked || this.disposed) return;
     const failed = [djs, ahead, archive, recent].find((found) => !found.ok);
+    if (failed && shown) return;
     if (failed) { this.loading.setValue("failed"); this.trouble.setValue(failed.error); return; }
     this.received({ djs: djs.data, ahead: ahead.shows, archive: archive.shows, recent: recent.shows });
   }
 
   /** What there is, as found. */
   received({ djs = [], ahead = [], archive = [], recent = [] }) {
-    this.djs.setValue(djs);
-    this.ahead.setValue(ahead);
-    this.archive.setValue(archive);
-    this.recent.setValue(recent);
+    renew(this.djs, djs);
+    renew(this.ahead, ahead);
+    renew(this.archive, archive);
+    renew(this.recent, recent);
     this.loading.setValue("ready");
     this.trouble.setValue("");
   }

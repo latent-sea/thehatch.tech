@@ -3,7 +3,7 @@
 // through the door like any other. Plain JavaScript, one ES module, on
 // gd-chime for the web (../gd_chime/, beside it in a site as in web/).
 //
-//     import { Player } from "./player/player.js?v=fc8f4b8b1b3f";
+//     import { Player } from "./player/player.js?v=f905a68000af";
 //
 //     declare(register) { register.declareAll(Player.WORDS); }
 //     describe() {
@@ -25,7 +25,7 @@
 // Session API, where the browser has it). Given media, a bound value reading
 // { title, artist, artwork }, the phone shows what is playing.
 
-import { Chimes, Controller, Phrase } from "../gd_chime/gd_chime.js?v=fc8f4b8b1b3f";
+import { Chimes, Controller, Phrase } from "../gd_chime/gd_chime.js?v=f905a68000af";
 
 export class Player extends Controller {
   static PLAYS = "plays_the_stream";

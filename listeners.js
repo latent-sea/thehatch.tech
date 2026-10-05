@@ -3,8 +3,9 @@
 // For the admin, the last 24 hours an hour at a time and the shows heard
 // most; for a DJ, their own shows' figures. Hours are UK hours.
 
-import { Controller } from "./gd_chime/gd_chime.js?v=fc8f4b8b1b3f";
-import { timeOf } from "./schedule.js?v=fc8f4b8b1b3f";
+import { renew } from "./renew.js?v=f905a68000af";
+import { Controller } from "./gd_chime/gd_chime.js?v=f905a68000af";
+import { timeOf } from "./schedule.js?v=f905a68000af";
 
 const HOUR = 60 * 60 * 1000;
 
@@ -59,8 +60,8 @@ export class Listeners extends Controller {
   }
 
   received({ counts = [], stats = [] }) {
-    this.counts.setValue(counts);
-    this.stats.setValue(stats);
+    renew(this.counts, counts);
+    renew(this.stats, stats);
     this.loaded.setValue(true);
   }
 

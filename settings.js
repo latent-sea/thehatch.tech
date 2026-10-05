@@ -6,9 +6,10 @@
 // they first do), removed, never the last. Until
 // the platform answers, the words are content.js's.
 
-import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=fc8f4b8b1b3f";
-import { STATION } from "./content.js?v=fc8f4b8b1b3f";
-import { EMAIL } from "./admin_djs.js?v=fc8f4b8b1b3f";
+import { renew } from "./renew.js?v=f905a68000af";
+import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=f905a68000af";
+import { STATION } from "./content.js?v=f905a68000af";
+import { EMAIL } from "./admin_djs.js?v=f905a68000af";
 
 /** What visitors read: found once as the page opens, and again when an admin saves. */
 export class StationWords extends Controller {
@@ -102,10 +103,10 @@ export class Settings extends Controller {
     if (this.disposed) return;
     if (genres.ok) {
       const typed = this.names.read();
-      this.genres.setValue(genres.data);
-      this.names.setValue(Object.fromEntries(genres.data.map((genre) => [genre.id, typed[genre.id] ?? genre.name])));
+      renew(this.genres, genres.data);
+      renew(this.names, Object.fromEntries(genres.data.map((genre) => [genre.id, typed[genre.id] ?? genre.name])));
     }
-    if (admins.ok) this.admins.setValue(admins.data);
+    if (admins.ok) renew(this.admins, admins.data);
   }
 
   answers() { return Object.keys(WORDS); }

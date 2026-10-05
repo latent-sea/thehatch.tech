@@ -5,8 +5,9 @@
 // in UK time, wherever the admin is; a show ending at or before it starts
 // ends the next day. What may be saved is decided on the platform (backend.sql).
 
-import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=fc8f4b8b1b3f";
-import { dayAt, dayId, timeOf, ukParts, ukTime } from "./schedule.js?v=fc8f4b8b1b3f";
+import { renew } from "./renew.js?v=f905a68000af";
+import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=f905a68000af";
+import { dayAt, dayId, timeOf, ukParts, ukTime } from "./schedule.js?v=f905a68000af";
 
 export const PREVIOUS_WEEK = "shows_the_previous_week";
 export const NEXT_WEEK = "shows_the_next_week";
@@ -94,11 +95,15 @@ export class ScheduleDesk extends Controller {
   async loadShows() {
     const asked = ++this._asked;
     const monday = this.week.read();
-    this.loading.setValue("loading");
+    // the same week found again stays shown; another week says it is being found
+    const shown = this.loading.read() === "ready" && this._shownWeek === monday;
+    if (!shown) this.loading.setValue("loading");
     const found = await this.studio.schedule(dayAt(monday, 0, 0), dayAt(monday, 7, 0));
     if (asked !== this._asked || this.disposed) return;
+    if (!found.ok && shown) return;
     if (!found.ok) { this.loading.setValue("failed"); this.problem.setValue(found.error); return; }
-    this.shows.setValue(found.shows);
+    renew(this.shows, found.shows);
+    this._shownWeek = monday;
     this.loading.setValue("ready");
   }
 

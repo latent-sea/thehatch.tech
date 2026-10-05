@@ -3,7 +3,8 @@
 // from Join Us, each approved - which adds the applicant to the DJs - or
 // declined.
 
-import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=fc8f4b8b1b3f";
+import { renew } from "./renew.js?v=f905a68000af";
+import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=f905a68000af";
 
 export const MARKS_READ = "marks_a_message_read";
 export const MARKS_UNREAD = "marks_a_message_unread";
@@ -35,8 +36,8 @@ export class Inbox extends Controller {
   async load() {
     const [messages, applications] = await Promise.all([this.studio.messages(), this.studio.applications()]);
     if (this.disposed) return;
-    if (messages.ok) this.messages.setValue(messages.data);
-    if (applications.ok) this.applications.setValue(applications.data);
+    if (messages.ok) renew(this.messages, messages.data);
+    if (applications.ok) renew(this.applications, applications.data);
     if (!messages.ok || !applications.ok) this.problem.setValue(messages.error || applications.error);
   }
 

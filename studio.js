@@ -6,9 +6,9 @@
 // Signing in is with Google (backend/google.js): the platform sends no
 // email yet, so a code by email can't be offered.
 
-import { Backend } from "./backend/backend.js?v=fc8f4b8b1b3f";
-import { drawGoogleButton } from "./backend/google.js?v=fc8f4b8b1b3f";
-import { shrinkPicture } from "./backend/pictures.js?v=fc8f4b8b1b3f";
+import { Backend } from "./backend/backend.js?v=f905a68000af";
+import { drawGoogleButton } from "./backend/google.js?v=f905a68000af";
+import { shrinkPicture } from "./backend/pictures.js?v=f905a68000af";
 
 // public: the platform's address and its publishable key belong in the page
 const PLATFORM = "https://api.latent-sea.com";
