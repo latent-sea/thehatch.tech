@@ -3,8 +3,8 @@
 // Again), and the last month's shows, recorded or not (the admin's to-dos). Found once as the page opens, and again when an admin or DJ
 // changes something. The screens filter them as the reader asks.
 
-import { renew } from "./renew.js?v=f905a68000af";
-import { Controller } from "./gd_chime/gd_chime.js?v=f905a68000af";
+import { renew } from "./renew.js?v=273553db3592";
+import { Controller } from "./gd_chime/gd_chime.js?v=273553db3592";
 
 const DAY = 24 * 60 * 60 * 1000;
 

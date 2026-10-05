@@ -13,23 +13,23 @@
 // studio.js): what is on air, what is next and the week ahead follow the
 // clock (schedule.js). Every time is UK time, the station's.
 
-import { ChimeApp, Chimes, Controller, Driver, Frames, Look, Phrase, Ui } from "./gd_chime/gd_chime.js?v=f905a68000af";
-import { Player } from "./player/player.js?v=f905a68000af";
-import { STATION } from "./content.js?v=f905a68000af";
-import { HATCH } from "./palette.js?v=f905a68000af";
-import { STREAM, Station, askHost, quietAudio } from "./station.js?v=f905a68000af";
-import { Schedule, dateOf, dayAt, dayId, dayName, djsOf, genresOf, slotOf, timeOf, weekdayOf } from "./schedule.js?v=f905a68000af";
-import { Studio } from "./studio.js?v=f905a68000af";
-import { Account, SIGNS_OUT } from "./account.js?v=f905a68000af";
-import * as Desk from "./desk.js?v=f905a68000af";
-import { Library } from "./library.js?v=f905a68000af";
-import * as Work from "./workspace.js?v=f905a68000af";
-import * as Djs from "./admin_djs.js?v=f905a68000af";
-import * as Mail from "./letters.js?v=f905a68000af";
-import * as Box from "./inbox.js?v=f905a68000af";
-import * as Keep from "./settings.js?v=f905a68000af";
-import { Listeners } from "./listeners.js?v=f905a68000af";
-import * as Tracks from "./track_pictures.js?v=f905a68000af";
+import { ChimeApp, Chimes, Controller, Driver, Frames, Look, Phrase, Ui } from "./gd_chime/gd_chime.js?v=273553db3592";
+import { Player } from "./player/player.js?v=273553db3592";
+import { STATION } from "./content.js?v=273553db3592";
+import { HATCH } from "./palette.js?v=273553db3592";
+import { STREAM, Station, askHost, quietAudio } from "./station.js?v=273553db3592";
+import { Schedule, dateOf, dayAt, dayId, dayName, djsOf, genresOf, slotOf, timeOf, weekdayOf } from "./schedule.js?v=273553db3592";
+import { Studio } from "./studio.js?v=273553db3592";
+import { Account, SIGNS_OUT } from "./account.js?v=273553db3592";
+import * as Desk from "./desk.js?v=273553db3592";
+import { Library } from "./library.js?v=273553db3592";
+import * as Work from "./workspace.js?v=273553db3592";
+import * as Djs from "./admin_djs.js?v=273553db3592";
+import * as Mail from "./letters.js?v=273553db3592";
+import * as Box from "./inbox.js?v=273553db3592";
+import * as Keep from "./settings.js?v=273553db3592";
+import { Listeners } from "./listeners.js?v=273553db3592";
+import * as Tracks from "./track_pictures.js?v=273553db3592";
 
 // the screens, by the address each is opened at
 const HOME = "home";
@@ -159,7 +159,7 @@ export class TheHatch extends ChimeApp {
   showPicture() { return this.schedule.onAir()?.picture || this.tracks.pictureFor(this.station.nowPlaying.read()); }
 
   // loaded only when the page is walked (?probe), so an export leaves it out
-  probe() { return import("./probe.js?v=f905a68000af").then((made) => new made.Probe(this)); }
+  probe() { return import("./probe.js?v=273553db3592").then((made) => new made.Probe(this)); }
 
   /** The app mounted, then its address kept: #about opens About, and the address follows the reader. */
   mount(element) {
@@ -935,18 +935,18 @@ export class TheHatch extends ChimeApp {
     const contact = letters.contact;
     return ui.screen(CONTACT, [
       ui.column([ui.text(Phrase.of("Contact"), "PageTitle"), ui.text(Phrase.of("Questions, gigs, anything: it comes straight to the station team."), "Quiet").wraps()], "PageHead"),
+      // once sent, the thanks takes the form's place
       ui.when(letters.sent.map((kind) => kind === "message"), ui.surface("Thanks", [
         ui.text(Phrase.of("Thanks, your message is with the team."), "SectionTitle"),
         ui.text(Phrase.of("We'll reply to the email address you gave."), "Quiet"),
-      ])),
-      ui.surface("Form Letter", [
+      ]), ui.surface("Form Letter", [
         this.letterField(Mail.SETS_CONTACT, "name", Phrase.of("Name"), contact, { autocomplete: "name" }),
         this.letterField(Mail.SETS_CONTACT, "email", Phrase.of("Email"), contact, { kind: "email", autocomplete: "email" }),
         ui.text(Phrase.of("Message"), "Label"),
         ui.area(Mail.SETS_MESSAGE_BODY, contact.map((now) => now.body)),
         ui.text(ui.bound(() => (letters.sending.read() === "" ? letters.problem.read() : "")), "Problem").wraps().hidesEmpty(),
         ui.button(Mail.SENDS_MESSAGE, { style: "PrimaryButton" }),
-      ]),
+      ])),
     ]);
   }
 
@@ -960,8 +960,7 @@ export class TheHatch extends ChimeApp {
       ui.when(letters.sent.map((kind) => kind === "application"), ui.surface("Thanks", [
         ui.text(Phrase.of("Thanks, your application is in."), "SectionTitle"),
         ui.text(Phrase.of("The team listens to every mix, and will reply by email."), "Quiet"),
-      ])),
-      ui.surface("Form Letter", [
+      ]), ui.surface("Form Letter", [
         this.letterField(Mail.SETS_APPLICATION, "artist", Phrase.of("Artist name"), application),
         this.letterField(Mail.SETS_APPLICATION, "email", Phrase.of("Email"), application, { kind: "email", autocomplete: "email" }),
         this.letterField(Mail.SETS_APPLICATION, "genres", Phrase.of("Genres"), application, { placeholder: Phrase.of("Techno, dub, jungle…") }),
@@ -970,7 +969,7 @@ export class TheHatch extends ChimeApp {
         ui.area(Mail.SETS_APPLICATION_ABOUT, application.map((now) => now.about)),
         ui.text(ui.bound(() => (letters.sending.read() === "" ? letters.problem.read() : "")), "Problem").wraps().hidesEmpty(),
         ui.button(Mail.SENDS_APPLICATION, { style: "PrimaryButton" }),
-      ]),
+      ])),
     ]);
   }
 
