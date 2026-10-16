@@ -5,7 +5,7 @@
 // opens their own; an admin opens any DJ's from the admin's DJs. What may be
 // saved is decided on the platform (backend.sql).
 
-import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=25cdbcae67c3";
+import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=b3beb1d9d7c2";
 
 export const SETS_NAME = "sets_the_dj_name";
 export const SETS_LOCATION = "sets_the_dj_location";
@@ -13,6 +13,8 @@ export const SETS_BIO = "sets_the_dj_bio";
 export const SETS_LINKS = "sets_the_dj_links";
 export const TOGGLES_GENRE = "toggles_a_dj_genre";
 export const CHOOSES_PHOTO = "chooses_a_dj_photo";
+export const CHOOSES_SHOWS_PICTURE = "chooses_a_default_show_picture";
+export const REMOVES_SHOWS_PICTURE = "removes_the_default_show_picture";
 export const SAVES_PROFILE = "saves_the_dj_profile";
 export const CHOOSES_SHOW_PICTURE = "chooses_a_show_picture";
 export const SETS_RECORDING = "sets_a_recording";
@@ -28,11 +30,13 @@ export const WORDS = {
   [SETS_LINKS]: ["Links"],
   [TOGGLES_GENRE]: ["Choose a genre"],
   [CHOOSES_PHOTO]: ["Choose a photo"],
+  [CHOOSES_SHOWS_PICTURE]: ["Choose a default picture"],
+  [REMOVES_SHOWS_PICTURE]: ["Remove the default"],
   [SAVES_PROFILE]: ["Save profile"],
   [CHOOSES_SHOW_PICTURE]: ["Choose a picture"],
   [SETS_RECORDING]: ["Recording link"],
   [SAVES_RECORDING]: ["Save link"],
-  [REMOVES_SHOW_PICTURE]: ["Use the logo"],
+  [REMOVES_SHOW_PICTURE]: ["Use the default instead"],
   [SETS_DESCRIPTION]: ["Description"],
   [SAVES_DESCRIPTION]: ["Save description"],
 };
@@ -62,6 +66,7 @@ export class Workspace extends Controller {
     this.bio = this.value("");
     this.links = this.value("");
     this.picture = this.value("");
+    this.showsPicture = this.value(""); // the default picture for their shows
     this.genreIds = this.value([]);
     this.genres = this.value([]);
     this.shows = this.value([]);
@@ -80,6 +85,7 @@ export class Workspace extends Controller {
     this.bio.setValue(profile.bio);
     this.links.setValue(linesFrom(profile.links));
     this.picture.setValue(profile.picture);
+    this.showsPicture.setValue(profile.showsPicture ?? "");
     this.genreIds.setValue(profile.genreIds);
     this.problem.setValue("");
     this.notice.setValue("");
@@ -114,7 +120,8 @@ export class Workspace extends Controller {
   answers() { return Object.keys(WORDS); }
 
   would(action, payload) {
-    if ([SAVES_PROFILE, CHOOSES_PHOTO, CHOOSES_SHOW_PICTURE, SAVES_RECORDING, REMOVES_SHOW_PICTURE, SAVES_DESCRIPTION].includes(action) && this.busy.read()) return Phrase.of("Saving");
+    if ([SAVES_PROFILE, CHOOSES_PHOTO, CHOOSES_SHOWS_PICTURE, REMOVES_SHOWS_PICTURE, CHOOSES_SHOW_PICTURE, SAVES_RECORDING, REMOVES_SHOW_PICTURE, SAVES_DESCRIPTION].includes(action) && this.busy.read()) return Phrase.of("Saving");
+    if (action === REMOVES_SHOWS_PICTURE && !this.showsPicture.read()) return Phrase.of("No default set");
     if (action === SAVES_PROFILE) {
       if (!this.name.read().trim()) return Phrase.of("Your DJ name, please");
       const bad = linksFrom(this.links.read()).find((link) => !WEB_LINK.test(link.url));
@@ -133,7 +140,7 @@ export class Workspace extends Controller {
       if (show && words === show.description) return Phrase.of("Nothing to save");
       if (words.length > 2000) return Phrase.of("2000 characters at most");
     }
-    if (action === REMOVES_SHOW_PICTURE && !this.shows.read().find((held) => held.id === payload?.id)?.picture) return Phrase.of("It has the logo");
+    if (action === REMOVES_SHOW_PICTURE && !this.shows.read().find((held) => held.id === payload?.id)?.picture) return Phrase.of("It has no picture of its own");
     return null;
   }
 
@@ -151,6 +158,8 @@ export class Workspace extends Controller {
     }
     if (action === SETS_RECORDING) this.drafts.update((drafts) => ({ ...drafts, [payload.id]: payload.line }));
     if (action === CHOOSES_PHOTO) return this.photo(payload.file);
+    if (action === CHOOSES_SHOWS_PICTURE) return this.defaultPicture(payload.file);
+    if (action === REMOVES_SHOWS_PICTURE) this.setDefault(async () => { const saved = await this.studio.saveDj(this.dj.read().id, { show_picture_url: "" }); return saved.ok ? { ok: true, data: "" } : saved; }, "Default removed");
     if (action === CHOOSES_SHOW_PICTURE) return this.showPicture(payload.id, payload.file);
     if (action === SAVES_PROFILE) this.saveProfile();
     if (action === SAVES_RECORDING) this.saveRecording(payload.id);
@@ -175,6 +184,39 @@ export class Workspace extends Controller {
     });
     return null;
   }
+
+  /** The default picture for their shows: uploaded, and saved to the profile. */
+  defaultPicture(file) {
+    if (!file.type.startsWith("image/")) return Phrase.of("Please choose a picture (JPEG, PNG or WebP)");
+    const dj = this.dj.read();
+    this.setDefault(async () => {
+      const kept = await this.studio.uploadPicture(`dj-shows-${dj.id}.jpg`, file);
+      if (!kept.ok) return kept;
+      const saved = await this.studio.saveDj(dj.id, { show_picture_url: kept.data });
+      return saved.ok ? kept : saved;
+    }, "Default picture saved: your shows without their own use it");
+    return null;
+  }
+
+  setDefault(work, said) {
+    this.change(work, (address) => {
+      this.showsPicture.setValue(address);
+      this.dj.update((dj) => ({ ...dj, showsPicture: address }));
+      this.notice.setValue(said);
+      this.changed();
+    });
+  }
+
+  /** Where a show's picture comes from, said beneath it when it has none of its own. */
+  pictureSource(show) {
+    if (!show || show.picture) return null;
+    if (this.showsPicture.read()) return Phrase.of("Using your default picture");
+    if (this.picture.read()) return Phrase.of("Using your photo (no default picture set)");
+    return Phrase.of("Using the station logo (no default picture or photo set)");
+  }
+
+  /** What a show of theirs shows: its own picture, else their default, else their photo, else "" (the logo). */
+  pictureFor(show) { return show?.picture || this.showsPicture.read() || this.picture.read() || ""; }
 
   showPicture(id, file) {
     if (!file.type.startsWith("image/")) return Phrase.of("Please choose a picture (JPEG, PNG or WebP)");

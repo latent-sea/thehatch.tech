@@ -13,23 +13,23 @@
 // studio.js): what is on air, what is next and the week ahead follow the
 // clock (schedule.js). Every time is UK time, the station's.
 
-import { ChimeApp, Chimes, Controller, Driver, Frames, Look, Phrase, Ui } from "./gd_chime/gd_chime.js?v=25cdbcae67c3";
-import { Player } from "./player/player.js?v=25cdbcae67c3";
-import { STATION } from "./content.js?v=25cdbcae67c3";
-import { HATCH } from "./palette.js?v=25cdbcae67c3";
-import { STREAM, Station, askHost, quietAudio } from "./station.js?v=25cdbcae67c3";
-import { Schedule, dateOf, dayAt, dayId, dayName, djsOf, genresOf, slotOf, timeOf, weekdayOf } from "./schedule.js?v=25cdbcae67c3";
-import { Studio } from "./studio.js?v=25cdbcae67c3";
-import { Account, SIGNS_OUT } from "./account.js?v=25cdbcae67c3";
-import * as Desk from "./desk.js?v=25cdbcae67c3";
-import { Library } from "./library.js?v=25cdbcae67c3";
-import * as Work from "./workspace.js?v=25cdbcae67c3";
-import * as Djs from "./admin_djs.js?v=25cdbcae67c3";
-import * as Mail from "./letters.js?v=25cdbcae67c3";
-import * as Box from "./inbox.js?v=25cdbcae67c3";
-import * as Keep from "./settings.js?v=25cdbcae67c3";
-import { Listeners } from "./listeners.js?v=25cdbcae67c3";
-import * as Tracks from "./track_pictures.js?v=25cdbcae67c3";
+import { ChimeApp, Chimes, Controller, Driver, Frames, Look, Phrase, Ui } from "./gd_chime/gd_chime.js?v=b3beb1d9d7c2";
+import { Player } from "./player/player.js?v=b3beb1d9d7c2";
+import { STATION } from "./content.js?v=b3beb1d9d7c2";
+import { HATCH } from "./palette.js?v=b3beb1d9d7c2";
+import { STREAM, Station, askHost, quietAudio } from "./station.js?v=b3beb1d9d7c2";
+import { Schedule, dateOf, dayAt, dayId, dayName, djsOf, genresOf, slotOf, timeOf, weekdayOf } from "./schedule.js?v=b3beb1d9d7c2";
+import { Studio } from "./studio.js?v=b3beb1d9d7c2";
+import { Account, SIGNS_OUT } from "./account.js?v=b3beb1d9d7c2";
+import * as Desk from "./desk.js?v=b3beb1d9d7c2";
+import { Library } from "./library.js?v=b3beb1d9d7c2";
+import * as Work from "./workspace.js?v=b3beb1d9d7c2";
+import * as Djs from "./admin_djs.js?v=b3beb1d9d7c2";
+import * as Mail from "./letters.js?v=b3beb1d9d7c2";
+import * as Box from "./inbox.js?v=b3beb1d9d7c2";
+import * as Keep from "./settings.js?v=b3beb1d9d7c2";
+import { Listeners } from "./listeners.js?v=b3beb1d9d7c2";
+import * as Tracks from "./track_pictures.js?v=b3beb1d9d7c2";
 
 // the screens, by the address each is opened at
 const HOME = "home";
@@ -156,10 +156,10 @@ export class TheHatch extends ChimeApp {
   }
 
   /** The picture for what is on air: the show's own, else one an admin gave what is playing, else "" (the logo). */
-  showPicture() { return this.schedule.onAir()?.picture || this.tracks.pictureFor(this.station.nowPlaying.read()); }
+  showPicture() { const show = this.schedule.onAir(); return (show && this.pictureOf(show)) || this.tracks.pictureFor(this.station.nowPlaying.read()); }
 
   // loaded only when the page is walked (?probe), so an export leaves it out
-  probe() { return import("./probe.js?v=25cdbcae67c3").then((made) => new made.Probe(this)); }
+  probe() { return import("./probe.js?v=b3beb1d9d7c2").then((made) => new made.Probe(this)); }
 
   /** The app mounted, then its address kept: #about opens About, and the address follows the reader. */
   mount(element) {
@@ -362,7 +362,15 @@ export class TheHatch extends ChimeApp {
   }
 
   /** A show's picture: its own, else its first DJ's photo, else "" (the logo). */
-  pictureOf(show) { return show?.picture || show?.djs?.find((dj) => dj.picture_url)?.picture_url || ""; }
+  /**
+   * A show's picture, falling back in turn: its own; else its DJs' default
+   * picture for their shows (the first DJ's that has one); else a DJ's photo;
+   * else "" - the station logo.
+   */
+  pictureOf(show) {
+    const djs = show?.djs ?? [];
+    return show?.picture || djs.find((dj) => dj.show_picture_url)?.show_picture_url || djs.find((dj) => dj.picture_url)?.picture_url || "";
+  }
 
   /** One show in a list: its picture, time, title, description, DJs and genres, and whether it is on air. */
   showRow(show, withDay = false) {
@@ -980,7 +988,7 @@ export class TheHatch extends ChimeApp {
     const genreChips = ui.eachAcross(work.genres, (held) => ui.pressable(Work.TOGGLES_GENRE, held.map((genre) => ({ id: genre?.id })), [ui.text(held.map((genre) => genre?.name ?? ""), "ChipWords")], "Chip")
       .currentWhile(ui.bound(() => work.genreIds.read().includes(held.read()?.id))), (genre) => genre.id, "Chips");
     const showRow = (show, past) => ui.row([
-      this.artwork("ShowThumb", show.map((held) => held?.picture ?? "")),
+      this.artwork("ShowThumb", ui.bound(() => work.pictureFor(show.read()))),
       ui.column([
         ui.text(show.map((held) => (held ? `${dateOf(held.starts)} · ${slotOf(held)}` : "")), "ShowTime"),
         ui.text(show.map((held) => held?.title ?? ""), "ShowTitle").wraps(),
@@ -988,6 +996,7 @@ export class TheHatch extends ChimeApp {
           ui.file(Work.CHOOSES_SHOW_PICTURE, Phrase.of("Choose a picture"), { accept: "image/*", payload: show.map((held) => ({ id: held?.id })), style: "SecondaryButton" }),
           ui.button(Work.REMOVES_SHOW_PICTURE, { payload: show.map((held) => ({ id: held?.id })), style: "SecondaryButton" }).absentWhenRefused(),
         ], "Actions"),
+        ui.text(ui.bound(() => work.pictureSource(show.read())), "Quiet").hidesEmpty(),
         ui.text(Phrase.of("Description"), "Label"),
         ui.area(Work.SETS_DESCRIPTION, ui.bound(() => work.descriptions.read()[show.read()?.id] ?? ""), "TextArea", { carries: (line) => ({ id: show.read()?.id, line }) }),
         ui.row([ui.button(Work.SAVES_DESCRIPTION, { payload: show.map((held) => ({ id: held?.id })), style: "SecondaryButton" }).absentWhenRefused()], "Actions"),
@@ -1009,6 +1018,17 @@ export class TheHatch extends ChimeApp {
           ui.column([
             ui.text(Phrase.of("Your photo is shown on your page and the DJ list. A square one works best."), "Quiet").wraps(),
             ui.file(Work.CHOOSES_PHOTO, Phrase.of("Choose a photo"), { accept: "image/*", style: "SecondaryButton" }),
+          ], "ShowWords").grow(),
+        ], "PhotoRow"),
+        ui.row([
+          this.artwork("ProfileThumb", work.showsPicture),
+          ui.column([
+            ui.text(Phrase.of("Default picture for your shows"), "Label"),
+            ui.text(Phrase.of("Used for any show of yours without its own picture, so you needn't upload one each time. Without a default, your photo is used; without either, the station logo."), "Quiet").wraps(),
+            ui.row([
+              ui.file(Work.CHOOSES_SHOWS_PICTURE, Phrase.of("Choose a default picture"), { accept: "image/*", style: "SecondaryButton" }),
+              ui.button(Work.REMOVES_SHOWS_PICTURE, { style: "SecondaryButton" }).absentWhenRefused(),
+            ], "Actions"),
           ], "ShowWords").grow(),
         ], "PhotoRow"),
         ui.field(Work.SETS_NAME, "", { label: Phrase.of("DJ name"), changes: Work.SETS_NAME, shows: work.name }),
@@ -1036,7 +1056,7 @@ export class TheHatch extends ChimeApp {
       ], "Section")),
       ui.column([
         ui.text(Phrase.of("Upcoming shows"), "SectionTitle"),
-        ui.text(Phrase.of("Give each a picture. Shows without one use the station logo."), "Quiet").wraps(),
+        ui.text(Phrase.of("Give a show its own picture, or leave it to use your default picture."), "Quiet").wraps(),
         ui.each(ui.bound(() => work.upcoming()), (show) => showRow(show, false), (show) => show.id, "ShowList"),
         ui.when(ui.bound(() => !work.upcoming().length), ui.text(Phrase.of("No shows coming up. An admin adds them to the schedule."), "Quiet")),
       ], "Section"),

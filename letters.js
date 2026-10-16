@@ -3,7 +3,7 @@
 // (studio.js) and lands in the admins' Inbox (inbox.js). The forms say what
 // is missing before sending, and thank the visitor once sent.
 
-import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=25cdbcae67c3";
+import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=b3beb1d9d7c2";
 
 export const SETS_CONTACT = "sets_a_contact_field";
 export const SETS_MESSAGE_BODY = "sets_the_message";

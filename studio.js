@@ -6,9 +6,9 @@
 // Signing in is with Google (backend/google.js): the platform sends no
 // email yet, so a code by email can't be offered.
 
-import { Backend } from "./backend/backend.js?v=25cdbcae67c3";
-import { drawSignIn, takeGoogleRedirect } from "./backend/google.js?v=25cdbcae67c3";
-import { shrinkPicture } from "./backend/pictures.js?v=25cdbcae67c3";
+import { Backend } from "./backend/backend.js?v=b3beb1d9d7c2";
+import { drawSignIn, takeGoogleRedirect } from "./backend/google.js?v=b3beb1d9d7c2";
+import { shrinkPicture } from "./backend/pictures.js?v=b3beb1d9d7c2";
 
 // public: the platform's address and its publishable key belong in the page
 const PLATFORM = "https://api.latent-sea.com";
@@ -36,7 +36,7 @@ export function djFrom(row) {
 /** A DJ's profile as their workspace edits it, or null. */
 export function profileFrom(row) {
   if (!row) return null;
-  return { id: row.id, name: row.name, bio: row.bio ?? "", location: row.location ?? "", picture: row.picture_url ?? "",
+  return { id: row.id, name: row.name, bio: row.bio ?? "", location: row.location ?? "", picture: row.picture_url ?? "", showsPicture: row.show_picture_url ?? "",
     links: Array.isArray(row.links) ? row.links : [], resident: !!row.resident, userId: row.user_id ?? null,
     genreIds: (row.the_hatch_dj_genres ?? []).map((tag) => tag.genre_id) };
 }

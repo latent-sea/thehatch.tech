@@ -3,9 +3,9 @@
 // For the admin, the last 24 hours an hour at a time and the shows heard
 // most; for a DJ, their own shows' figures. Hours are UK hours.
 
-import { renew } from "./renew.js?v=25cdbcae67c3";
-import { Controller } from "./gd_chime/gd_chime.js?v=25cdbcae67c3";
-import { timeOf } from "./schedule.js?v=25cdbcae67c3";
+import { renew } from "./renew.js?v=b3beb1d9d7c2";
+import { Controller } from "./gd_chime/gd_chime.js?v=b3beb1d9d7c2";
+import { timeOf } from "./schedule.js?v=b3beb1d9d7c2";
 
 const HOUR = 60 * 60 * 1000;
 
