@@ -24,17 +24,17 @@
 // is a function of the parameter it is entered with, handed in as a bound
 // value. Every pop-up owns its way out: CLOSES, which goes back.
 
-import { Bound } from "./bound.js?v=b3beb1d9d7c2";
-import { Chimes } from "./chimes.js?v=b3beb1d9d7c2";
-import { Desc } from "./desc.js?v=b3beb1d9d7c2";
-import { Driver } from "./driver.js?v=b3beb1d9d7c2";
-import { Frames } from "./frames.js?v=b3beb1d9d7c2";
-import { Language } from "./language.js?v=b3beb1d9d7c2";
-import { OwnBell } from "./own_bell.js?v=b3beb1d9d7c2";
-import { Phrase } from "./phrase.js?v=b3beb1d9d7c2";
-import { Place } from "./place.js?v=b3beb1d9d7c2";
-import { Pressables, Themes } from "./themes.js?v=b3beb1d9d7c2";
-import { Value } from "./value.js?v=b3beb1d9d7c2";
+import { Bound } from "./bound.js?v=b7f4248a4345";
+import { Chimes } from "./chimes.js?v=b7f4248a4345";
+import { Desc } from "./desc.js?v=b7f4248a4345";
+import { Driver } from "./driver.js?v=b7f4248a4345";
+import { Frames } from "./frames.js?v=b7f4248a4345";
+import { Language } from "./language.js?v=b7f4248a4345";
+import { OwnBell } from "./own_bell.js?v=b7f4248a4345";
+import { Phrase } from "./phrase.js?v=b7f4248a4345";
+import { Place } from "./place.js?v=b7f4248a4345";
+import { Pressables, Themes } from "./themes.js?v=b7f4248a4345";
+import { Value } from "./value.js?v=b7f4248a4345";
 
 const DRAWN = "drawn";
 let fieldsMade = 0; // every field's own id, so its label names it
@@ -75,9 +75,10 @@ export class Ui {
   image(content, style = "", alt = "") { return new Desc("image", { content, style, alt }); }
 
   /**
-   * Another page shown in a frame of this shape - a video above all. Its
-   * options: title, what the frame is, said to a reader who cannot see it;
-   * ratio, its shape ("16 / 9" unless given); poster, a picture shown in its
+   * Another page shown in a frame of this shape - a video above all - its
+   * address a string or a bound value (one of a list's). Its options:
+   * title, what the frame is, said to a reader who cannot see it;
+   * ratio, its shape ("16 / 9" unless given); poster, a picture (or a bound value) shown in its
    * place until it is pressed, so nothing of the other page loads before the
    * reader asks; and style. Without a poster the frame loads as it nears the screen.
    */
@@ -418,10 +419,12 @@ const BUILDERS = {
     const { src, title, ratio, poster, style } = desc.props;
     const made = el(parent, "div", `chime-embed ${styleOf(style)}`);
     made.style.aspectRatio = ratio;
-    const said = () => Language.said(title);
+    // the address and the poster may be bound values (an embed in a list): read as drawn, and as pressed
+    const address = () => String((Bound.is(src) ? src.read() : src) ?? "");
+    const said = () => Language.said(Bound.is(title) ? title.read() : title);
     const frame = () => {
       const shown = el(made, "iframe", "chime-embed-frame");
-      shown.src = src;
+      shown.src = address();
       shown.title = said();
       shown.loading = "lazy";
       shown.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen";
@@ -432,13 +435,15 @@ const BUILDERS = {
     // the poster stands in for the frame until pressed: a press of the reader's own, never a command
     const press = el(made, "button", "chime-embed-poster");
     press.type = "button";
-    press.dataset.src = src;
     const picture = el(press, "img", "chime-embed-picture");
-    picture.src = poster;
     picture.alt = "";
     picture.loading = "lazy";
     el(press, "span", "chime-embed-play");
-    ui.draws(press, () => { press.setAttribute("aria-label", Language.said(Phrase.with("Play %s", [said()]))); });
+    ui.draws(press, () => {
+      press.dataset.src = address();
+      picture.src = String((Bound.is(poster) ? poster.read() : poster) ?? "");
+      press.setAttribute("aria-label", Language.said(Phrase.with("Play %s", [said()])));
+    });
     press.addEventListener("click", () => {
       leave(press);
       press.remove();

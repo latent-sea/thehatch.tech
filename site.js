@@ -13,23 +13,23 @@
 // studio.js): what is on air, what is next and the week ahead follow the
 // clock (schedule.js). Every time is UK time, the station's.
 
-import { ChimeApp, Chimes, Controller, Driver, Frames, Look, Phrase, Ui } from "./gd_chime/gd_chime.js?v=b3beb1d9d7c2";
-import { Player } from "./player/player.js?v=b3beb1d9d7c2";
-import { STATION } from "./content.js?v=b3beb1d9d7c2";
-import { HATCH } from "./palette.js?v=b3beb1d9d7c2";
-import { STREAM, Station, askHost, quietAudio } from "./station.js?v=b3beb1d9d7c2";
-import { Schedule, dateOf, dayAt, dayId, dayName, djsOf, genresOf, slotOf, timeOf, weekdayOf } from "./schedule.js?v=b3beb1d9d7c2";
-import { Studio } from "./studio.js?v=b3beb1d9d7c2";
-import { Account, SIGNS_OUT } from "./account.js?v=b3beb1d9d7c2";
-import * as Desk from "./desk.js?v=b3beb1d9d7c2";
-import { Library } from "./library.js?v=b3beb1d9d7c2";
-import * as Work from "./workspace.js?v=b3beb1d9d7c2";
-import * as Djs from "./admin_djs.js?v=b3beb1d9d7c2";
-import * as Mail from "./letters.js?v=b3beb1d9d7c2";
-import * as Box from "./inbox.js?v=b3beb1d9d7c2";
-import * as Keep from "./settings.js?v=b3beb1d9d7c2";
-import { Listeners } from "./listeners.js?v=b3beb1d9d7c2";
-import * as Tracks from "./track_pictures.js?v=b3beb1d9d7c2";
+import { ChimeApp, Chimes, Controller, Driver, Frames, Look, Phrase, Ui } from "./gd_chime/gd_chime.js?v=b7f4248a4345";
+import { Player } from "./player/player.js?v=b7f4248a4345";
+import { STATION } from "./content.js?v=b7f4248a4345";
+import { HATCH } from "./palette.js?v=b7f4248a4345";
+import { STREAM, Station, askHost, quietAudio } from "./station.js?v=b7f4248a4345";
+import { Schedule, dateOf, dayAt, dayId, dayName, djsOf, genresOf, slotOf, timeOf, weekdayOf } from "./schedule.js?v=b7f4248a4345";
+import { Studio } from "./studio.js?v=b7f4248a4345";
+import { Account, SIGNS_OUT } from "./account.js?v=b7f4248a4345";
+import * as Desk from "./desk.js?v=b7f4248a4345";
+import { Library } from "./library.js?v=b7f4248a4345";
+import * as Work from "./workspace.js?v=b7f4248a4345";
+import * as Djs from "./admin_djs.js?v=b7f4248a4345";
+import * as Mail from "./letters.js?v=b7f4248a4345";
+import * as Box from "./inbox.js?v=b7f4248a4345";
+import * as Keep from "./settings.js?v=b7f4248a4345";
+import { Listeners } from "./listeners.js?v=b7f4248a4345";
+import * as Tracks from "./track_pictures.js?v=b7f4248a4345";
 
 // the screens, by the address each is opened at
 const HOME = "home";
@@ -159,7 +159,7 @@ export class TheHatch extends ChimeApp {
   showPicture() { const show = this.schedule.onAir(); return (show && this.pictureOf(show)) || this.tracks.pictureFor(this.station.nowPlaying.read()); }
 
   // loaded only when the page is walked (?probe), so an export leaves it out
-  probe() { return import("./probe.js?v=b3beb1d9d7c2").then((made) => new made.Probe(this)); }
+  probe() { return import("./probe.js?v=b7f4248a4345").then((made) => new made.Probe(this)); }
 
   /** The app mounted, then its address kept: #about opens About, and the address follows the reader. */
   mount(element) {
