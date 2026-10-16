@@ -5,9 +5,9 @@
 // in UK time, wherever the admin is; a show ending at or before it starts
 // ends the next day. What may be saved is decided on the platform (backend.sql).
 
-import { renew } from "./renew.js?v=b7f4248a4345";
-import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=b7f4248a4345";
-import { dayAt, dayId, timeOf, ukParts, ukTime } from "./schedule.js?v=b7f4248a4345";
+import { renew } from "./renew.js?v=f8ae26e4e171";
+import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=f8ae26e4e171";
+import { dayAt, dayId, timeOf, ukParts, ukTime } from "./schedule.js?v=f8ae26e4e171";
 
 export const PREVIOUS_WEEK = "shows_the_previous_week";
 export const NEXT_WEEK = "shows_the_next_week";
