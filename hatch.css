@@ -224,7 +224,14 @@ body::after {
 #app .ProfileThumb { width: 8rem; height: 8rem; flex: none; border-radius: var(--radius-s); padding: 0; }
 #app .ProfileThumb .ArtworkLogo { width: 4rem; }
 #app .PhotoRow { gap: 1rem; align-items: center; }
-#app .MyShow { align-items: flex-start; }
+/* a DJ's own show: its picture large, its fields beneath, what was done said beside Save */
+#app .MyShow { gap: 0.55rem; padding: 1rem; background: var(--chime-raised); border: 1px solid var(--chime-edge); border-radius: var(--radius); }
+#app .ShowPicRow { gap: 1rem; align-items: flex-start; }
+#app .ShowPic { width: 9rem; flex: none; border-radius: var(--radius-s); padding: 0; }
+#app .ShowPic .ArtworkLogo { width: 4rem; }
+#app .MyShow .ShowWords { gap: 0.5rem; align-items: flex-start; }
+#app .SaveRow { align-items: center; gap: 0.75rem; }
+#app .ShowSaid { font-size: 0.85rem; }
 #app .MyShow .ShowTime { min-width: 0; }
 #app .DjAdmin { flex-direction: column; align-items: stretch; gap: 0.6rem; }
 #app .DjAdminRow { gap: 0.6rem; flex-wrap: wrap; }

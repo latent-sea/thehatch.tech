@@ -13,23 +13,23 @@
 // studio.js): what is on air, what is next and the week ahead follow the
 // clock (schedule.js). Every time is UK time, the station's.
 
-import { ChimeApp, Chimes, Controller, Driver, Frames, Look, Phrase, Ui } from "./gd_chime/gd_chime.js?v=f8ae26e4e171";
-import { Player } from "./player/player.js?v=f8ae26e4e171";
-import { STATION } from "./content.js?v=f8ae26e4e171";
-import { HATCH } from "./palette.js?v=f8ae26e4e171";
-import { STREAM, Station, askHost, quietAudio } from "./station.js?v=f8ae26e4e171";
-import { Schedule, dateOf, dayAt, dayId, dayName, djsOf, genresOf, slotOf, timeOf, weekdayOf } from "./schedule.js?v=f8ae26e4e171";
-import { Studio } from "./studio.js?v=f8ae26e4e171";
-import { Account, SIGNS_OUT } from "./account.js?v=f8ae26e4e171";
-import * as Desk from "./desk.js?v=f8ae26e4e171";
-import { Library } from "./library.js?v=f8ae26e4e171";
-import * as Work from "./workspace.js?v=f8ae26e4e171";
-import * as Djs from "./admin_djs.js?v=f8ae26e4e171";
-import * as Mail from "./letters.js?v=f8ae26e4e171";
-import * as Box from "./inbox.js?v=f8ae26e4e171";
-import * as Keep from "./settings.js?v=f8ae26e4e171";
-import { Listeners } from "./listeners.js?v=f8ae26e4e171";
-import * as Tracks from "./track_pictures.js?v=f8ae26e4e171";
+import { ChimeApp, Chimes, Controller, Driver, Frames, Look, Phrase, Ui } from "./gd_chime/gd_chime.js?v=bf95e60b4ac9";
+import { Player } from "./player/player.js?v=bf95e60b4ac9";
+import { STATION } from "./content.js?v=bf95e60b4ac9";
+import { HATCH } from "./palette.js?v=bf95e60b4ac9";
+import { STREAM, Station, askHost, quietAudio } from "./station.js?v=bf95e60b4ac9";
+import { Schedule, dateOf, dayAt, dayId, dayName, djsOf, genresOf, slotOf, timeOf, weekdayOf } from "./schedule.js?v=bf95e60b4ac9";
+import { Studio } from "./studio.js?v=bf95e60b4ac9";
+import { Account, SIGNS_OUT } from "./account.js?v=bf95e60b4ac9";
+import * as Desk from "./desk.js?v=bf95e60b4ac9";
+import { Library } from "./library.js?v=bf95e60b4ac9";
+import * as Work from "./workspace.js?v=bf95e60b4ac9";
+import * as Djs from "./admin_djs.js?v=bf95e60b4ac9";
+import * as Mail from "./letters.js?v=bf95e60b4ac9";
+import * as Box from "./inbox.js?v=bf95e60b4ac9";
+import * as Keep from "./settings.js?v=bf95e60b4ac9";
+import { Listeners } from "./listeners.js?v=bf95e60b4ac9";
+import * as Tracks from "./track_pictures.js?v=bf95e60b4ac9";
 
 // the screens, by the address each is opened at
 const HOME = "home";
@@ -159,7 +159,7 @@ export class TheHatch extends ChimeApp {
   showPicture() { const show = this.schedule.onAir(); return (show && this.pictureOf(show)) || this.tracks.pictureFor(this.station.nowPlaying.read()); }
 
   // loaded only when the page is walked (?probe), so an export leaves it out
-  probe() { return import("./probe.js?v=f8ae26e4e171").then((made) => new made.Probe(this)); }
+  probe() { return import("./probe.js?v=bf95e60b4ac9").then((made) => new made.Probe(this)); }
 
   /** The app mounted, then its address kept: #about opens About, and the address follows the reader. */
   mount(element) {
@@ -987,32 +987,58 @@ export class TheHatch extends ChimeApp {
     const work = this.workspace;
     const genreChips = ui.eachAcross(work.genres, (held) => ui.pressable(Work.TOGGLES_GENRE, held.map((genre) => ({ id: genre?.id })), [ui.text(held.map((genre) => genre?.name ?? ""), "ChipWords")], "Chip")
       .currentWhile(ui.bound(() => work.genreIds.read().includes(held.read()?.id))), (genre) => genre.id, "Chips");
-    const showRow = (show, past) => ui.row([
-      this.artwork("ShowThumb", ui.bound(() => work.pictureFor(show.read()))),
-      ui.column([
-        ui.text(show.map((held) => (held ? `${dateOf(held.starts)} · ${slotOf(held)}` : "")), "ShowTime"),
-        ui.text(show.map((held) => held?.title ?? ""), "ShowTitle").wraps(),
+    const said = (where) => ui.text(ui.bound(() => (work.noticeAt.read() === where ? work.notice.read() : "")), "Notice").hidesEmpty();
+    // one show: its picture large, then its name, genres and description, saved together, and what was done said beside it
+    const showCard = (show, past) => {
+      const id = () => show.read()?.id;
+      const state = ui.bound(() => work.stateOf(show.read()));
+      const showGenreChips = ui.eachAcross(work.genres, (held) => ui.pressable(Work.TOGGLES_SHOW_GENRE, ui.bound(() => ({ id: id(), genre: held.read()?.id })), [ui.text(held.map((genre) => genre?.name ?? ""), "ChipWords")], "Chip")
+        .currentWhile(ui.bound(() => (work.showGenres.read()[id()] ?? []).includes(held.read()?.id))), (genre) => genre.id, "Chips");
+      return ui.column([
         ui.row([
-          ui.file(Work.CHOOSES_SHOW_PICTURE, Phrase.of("Choose a picture"), { accept: "image/*", payload: show.map((held) => ({ id: held?.id })), style: "SecondaryButton" }),
-          ui.button(Work.REMOVES_SHOW_PICTURE, { payload: show.map((held) => ({ id: held?.id })), style: "SecondaryButton" }).absentWhenRefused(),
-        ], "Actions"),
-        ui.text(ui.bound(() => work.pictureSource(show.read())), "Quiet").hidesEmpty(),
+          this.artwork("ShowPic", ui.bound(() => work.pictureFor(show.read()))),
+          ui.column([
+            ui.text(show.map((held) => (held ? `${dateOf(held.starts)} · ${slotOf(held)}` : "")), "ShowTime"),
+            ui.text(show.map((held) => (held && held.djs.length > 1 ? Phrase.with("With %s", [djsOf(held)]) : "")), "ShowWho").hidesEmpty(),
+            ui.file(Work.CHOOSES_SHOW_PICTURE, Phrase.of("Choose a picture"), { accept: "image/*", payload: show.map((held) => ({ id: held?.id })), style: "SecondaryButton" }),
+            ui.button(Work.REMOVES_SHOW_PICTURE, { payload: show.map((held) => ({ id: held?.id })), style: "SecondaryButton" }).absentWhenRefused(),
+            ui.text(ui.bound(() => work.pictureSource(show.read())), "Quiet").wraps().hidesEmpty(),
+          ], "ShowWords").grow(),
+        ], "ShowPicRow"),
+        ui.field(Work.SETS_SHOW_TITLE, "", { label: Phrase.of("Show name"), changes: Work.SETS_SHOW_TITLE, carries: (line) => ({ id: id(), line }), shows: ui.bound(() => work.titles.read()[id()] ?? "") }),
+        ui.text(Phrase.of("Genres"), "Label"),
+        showGenreChips,
         ui.text(Phrase.of("Description"), "Label"),
-        ui.area(Work.SETS_DESCRIPTION, ui.bound(() => work.descriptions.read()[show.read()?.id] ?? ""), "TextArea", { carries: (line) => ({ id: show.read()?.id, line }) }),
-        ui.row([ui.button(Work.SAVES_DESCRIPTION, { payload: show.map((held) => ({ id: held?.id })), style: "SecondaryButton" }).absentWhenRefused()], "Actions"),
+        ui.area(Work.SETS_DESCRIPTION, ui.bound(() => work.descriptions.read()[id()] ?? ""), "TextArea", { carries: (line) => ({ id: id(), line }) }),
+        ui.row([
+          ui.button(Work.SAVES_SHOW, { payload: show.map((held) => ({ id: held?.id })), style: "PrimaryButton" }).absentWhenRefused(),
+          ui.text(state.map((now) => (now && !now.bad ? now.words : "")), "Notice ShowSaid").wraps().hidesEmpty(),
+          ui.text(state.map((now) => (now?.bad ? now.words : "")), "Problem ShowSaid").wraps().hidesEmpty(),
+        ], "Actions SaveRow"),
         past ? ui.row([
           ui.field(Work.SETS_RECORDING, "", { label: Phrase.of("Recording link (Mixcloud, SoundCloud…)"), kind: "url", placeholder: Phrase.of("https://"),
-            changes: Work.SETS_RECORDING, carries: (line) => ({ id: show.read()?.id, line }), shows: ui.bound(() => work.drafts.read()[show.read()?.id] ?? "") }),
+            changes: Work.SETS_RECORDING, carries: (line) => ({ id: id(), line }), shows: ui.bound(() => work.drafts.read()[id()] ?? "") }),
           ui.button(Work.SAVES_RECORDING, { payload: show.map((held) => ({ id: held?.id })), style: "SecondaryButton" }).absentWhenRefused(),
         ], "FormRow LinkRow") : null,
         past ? ui.text(ui.bound(() => work.recordingNote(show.read())), "RecordingNote").hidesEmpty() : null,
-      ].filter(Boolean), "ShowWords").grow(),
-    ], "ShowRow MyShow");
+      ].filter(Boolean), "MyShow");
+    };
     return ui.column([
-      ui.text(work.notice, "Notice").hidesEmpty(),
       ui.text(work.problem, "Problem").wraps().hidesEmpty(),
+      ui.column([
+        ui.text(Phrase.of("Your upcoming shows"), "SectionTitle"),
+        ui.text(Phrase.of("Change a show's name, genres and description, then press Save show. Give it its own picture, or leave it to use your default picture."), "Quiet").wraps(),
+        ui.each(ui.bound(() => work.upcoming()), (show) => showCard(show, false), (show) => show.id, "ShowList"),
+        ui.when(ui.bound(() => !work.upcoming().length), ui.text(Phrase.of("No shows coming up. An admin adds them to the schedule."), "Quiet")),
+      ], "Section"),
+      ui.column([
+        ui.text(Phrase.of("Your past shows"), "SectionTitle"),
+        ui.text(Phrase.of("Add the link to where each recording is, and it appears under Listen Again."), "Quiet").wraps(),
+        ui.each(ui.bound(() => work.past()), (show) => showCard(show, true), (show) => show.id, "ShowList"),
+        ui.when(ui.bound(() => !work.past().length), ui.text(Phrase.of("No past shows yet."), "Quiet")),
+      ], "Section"),
       ui.surface("Form", [
-        ui.text(Phrase.of("Profile"), "SectionTitle"),
+        ui.text(Phrase.of("Your profile"), "SectionTitle"),
         ui.row([
           this.artwork("ProfileThumb", work.picture),
           ui.column([
@@ -1031,16 +1057,18 @@ export class TheHatch extends ChimeApp {
             ], "Actions"),
           ], "ShowWords").grow(),
         ], "PhotoRow"),
+        said("pictures"),
         ui.field(Work.SETS_NAME, "", { label: Phrase.of("DJ name"), changes: Work.SETS_NAME, shows: work.name }),
         ui.field(Work.SETS_LOCATION, "", { label: Phrase.of("Where you are"), changes: Work.SETS_LOCATION, shows: work.location, placeholder: Phrase.of("Glasgow") }),
         ui.text(Phrase.of("Bio"), "Label"),
         ui.area(Work.SETS_BIO, work.bio),
         ui.text(Phrase.of("Links, one a line: a name then the address (Bandcamp https://…)"), "Label"),
         ui.area(Work.SETS_LINKS, work.links),
-        ui.text(Phrase.of("Genres"), "Label"),
+        ui.text(Phrase.of("Your genres"), "Label"),
         genreChips,
         ui.row([
           ui.button(Work.SAVES_PROFILE, { style: "PrimaryButton" }),
+          said("profile"),
           ui.pressable(OPENS_DJ, ui.bound(() => ({ parameter: work.dj.read()?.id })), [ui.text(Phrase.of("See the public page →"), "MoreWords")], "More").goesTo(DJ),
         ], "Actions"),
       ]),
@@ -1054,20 +1082,9 @@ export class TheHatch extends ChimeApp {
         ui.text(Phrase.of("Their shows heard most"), "Label"),
         this.topShows(this.myHeard, Phrase.of("No figures yet: listeners are counted every five minutes while their shows are on.")),
       ], "Section")),
-      ui.column([
-        ui.text(Phrase.of("Upcoming shows"), "SectionTitle"),
-        ui.text(Phrase.of("Give a show its own picture, or leave it to use your default picture."), "Quiet").wraps(),
-        ui.each(ui.bound(() => work.upcoming()), (show) => showRow(show, false), (show) => show.id, "ShowList"),
-        ui.when(ui.bound(() => !work.upcoming().length), ui.text(Phrase.of("No shows coming up. An admin adds them to the schedule."), "Quiet")),
-      ], "Section"),
-      ui.column([
-        ui.text(Phrase.of("Past shows"), "SectionTitle"),
-        ui.text(Phrase.of("Add the link to where each recording is, and it appears under Listen Again."), "Quiet").wraps(),
-        ui.each(ui.bound(() => work.past()), (show) => showRow(show, true), (show) => show.id, "ShowList"),
-        ui.when(ui.bound(() => !work.past().length), ui.text(Phrase.of("No past shows yet."), "Quiet")),
-      ], "Section"),
     ], "Manager");
   }
+
 
   scheduleManager() {
     const ui = this.ui;

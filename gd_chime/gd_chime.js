@@ -4,7 +4,7 @@
 //
 // gd-chime for the web. MIT licensed; see LICENCE beside this file.
 //
-//     import { ChimeApp, Controller, Phrase, Themes } from "./gd_chime/gd_chime.js?v=f8ae26e4e171";
+//     import { ChimeApp, Controller, Phrase, Themes } from "./gd_chime/gd_chime.js?v=bf95e60b4ac9";
 //
 // A name here is a promise: what an application may use is exactly what
 // this file exports. Everything else in the folder is internal.
@@ -23,21 +23,21 @@
 //   Language, Frames.
 // - The walk: Walk, which a site's probe extends.
 
-export { Actions } from "./actions.js?v=f8ae26e4e171";
-export { Bound } from "./bound.js?v=f8ae26e4e171";
-export { ChimeApp } from "./chime_app.js?v=f8ae26e4e171";
-export { Chimes } from "./chimes.js?v=f8ae26e4e171";
-export { Commands } from "./commands.js?v=f8ae26e4e171";
-export { Controller } from "./controller.js?v=f8ae26e4e171";
-export { Desc } from "./desc.js?v=f8ae26e4e171";
-export { Driver } from "./driver.js?v=f8ae26e4e171";
-export { Frames } from "./frames.js?v=f8ae26e4e171";
-export { Language } from "./language.js?v=f8ae26e4e171";
-export { Look, PALETTE } from "./look.js?v=f8ae26e4e171";
-export { Phrase } from "./phrase.js?v=f8ae26e4e171";
-export { Fields, Navigation, Overlays, Pressables, Themes } from "./themes.js?v=f8ae26e4e171";
-export { Ui } from "./ui.js?v=f8ae26e4e171";
-export { Walk } from "./walk.js?v=f8ae26e4e171";
+export { Actions } from "./actions.js?v=bf95e60b4ac9";
+export { Bound } from "./bound.js?v=bf95e60b4ac9";
+export { ChimeApp } from "./chime_app.js?v=bf95e60b4ac9";
+export { Chimes } from "./chimes.js?v=bf95e60b4ac9";
+export { Commands } from "./commands.js?v=bf95e60b4ac9";
+export { Controller } from "./controller.js?v=bf95e60b4ac9";
+export { Desc } from "./desc.js?v=bf95e60b4ac9";
+export { Driver } from "./driver.js?v=bf95e60b4ac9";
+export { Frames } from "./frames.js?v=bf95e60b4ac9";
+export { Language } from "./language.js?v=bf95e60b4ac9";
+export { Look, PALETTE } from "./look.js?v=bf95e60b4ac9";
+export { Phrase } from "./phrase.js?v=bf95e60b4ac9";
+export { Fields, Navigation, Overlays, Pressables, Themes } from "./themes.js?v=bf95e60b4ac9";
+export { Ui } from "./ui.js?v=bf95e60b4ac9";
+export { Walk } from "./walk.js?v=bf95e60b4ac9";
 
 /** The version of gd-chime this is a port of, and of the port. */
 export const VERSION = "0.1.0";

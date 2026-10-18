@@ -6,9 +6,9 @@
 // Signing in is with Google (backend/google.js): the platform sends no
 // email yet, so a code by email can't be offered.
 
-import { Backend } from "./backend/backend.js?v=f8ae26e4e171";
-import { drawSignIn, takeGoogleRedirect } from "./backend/google.js?v=f8ae26e4e171";
-import { shrinkPicture } from "./backend/pictures.js?v=f8ae26e4e171";
+import { Backend } from "./backend/backend.js?v=bf95e60b4ac9";
+import { drawSignIn, takeGoogleRedirect } from "./backend/google.js?v=bf95e60b4ac9";
+import { shrinkPicture } from "./backend/pictures.js?v=bf95e60b4ac9";
 
 // public: the platform's address and its publishable key belong in the page
 const PLATFORM = "https://api.latent-sea.com";
@@ -255,6 +255,11 @@ export class Studio {
   /** A show's picture or recording link set, by one of its DJs or an admin: each given, or left as it is. */
   async updateShow(id, { picture = null, recording = null }) {
     return answer(await this.backend.callRpc("the_hatch_update_my_show", { show_id: id, picture_url: picture, recording_url: recording }));
+  }
+
+  /** A show's name and genre tags, changed by one of its DJs or an admin. */
+  async nameShow(id, title, genreIds) {
+    return answer(await this.backend.callRpc("the_hatch_name_my_show", { show_id: id, title, genre_ids: genreIds }));
   }
 
   /** A show's description, written by one of its DJs or an admin ('' leaves it blank). */

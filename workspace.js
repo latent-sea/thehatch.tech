@@ -5,7 +5,7 @@
 // opens their own; an admin opens any DJ's from the admin's DJs. What may be
 // saved is decided on the platform (backend.sql).
 
-import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=f8ae26e4e171";
+import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=bf95e60b4ac9";
 
 export const SETS_NAME = "sets_the_dj_name";
 export const SETS_LOCATION = "sets_the_dj_location";
@@ -21,7 +21,9 @@ export const SETS_RECORDING = "sets_a_recording";
 export const SAVES_RECORDING = "saves_a_recording";
 export const REMOVES_SHOW_PICTURE = "removes_a_show_picture";
 export const SETS_DESCRIPTION = "sets_a_show_description";
-export const SAVES_DESCRIPTION = "saves_a_show_description";
+export const SETS_SHOW_TITLE = "sets_a_show_name";
+export const TOGGLES_SHOW_GENRE = "toggles_a_show_genre";
+export const SAVES_SHOW = "saves_a_show";
 
 export const WORDS = {
   [SETS_NAME]: ["Name"],
@@ -38,7 +40,9 @@ export const WORDS = {
   [SAVES_RECORDING]: ["Save link"],
   [REMOVES_SHOW_PICTURE]: ["Use the default instead"],
   [SETS_DESCRIPTION]: ["Description"],
-  [SAVES_DESCRIPTION]: ["Save description"],
+  [SETS_SHOW_TITLE]: ["Show name"],
+  [TOGGLES_SHOW_GENRE]: ["Choose a genre for the show"],
+  [SAVES_SHOW]: ["Save show"],
 };
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -72,9 +76,13 @@ export class Workspace extends Controller {
     this.shows = this.value([]);
     this.drafts = this.value({}); // show id -> the recording link as typed
     this.descriptions = this.value({}); // show id -> its description as typed
+    this.titles = this.value({}); // show id -> its name as typed
+    this.showGenres = this.value({}); // show id -> its genre ids as chosen
+    this.said = this.value({}); // show id -> { words, bad }: what was last done to it, said beside it
     this.busy = this.value(false);
     this.problem = this.value("");
     this.notice = this.value("");
+    this.noticeAt = this.value("pictures"); // where the notice is said: beside the pictures, or the Save profile button
   }
 
   /** A DJ's profile opened, and their shows and the genres found. */
@@ -99,6 +107,9 @@ export class Workspace extends Controller {
     if (shows.ok) this.shows.setValue(shows.shows);
     this.drafts.setValue(Object.fromEntries((shows.shows ?? []).map((show) => [show.id, show.recording])));
     this.descriptions.setValue(Object.fromEntries((shows.shows ?? []).map((show) => [show.id, show.description])));
+    this.titles.setValue(Object.fromEntries((shows.shows ?? []).map((show) => [show.id, show.title])));
+    this.showGenres.setValue(Object.fromEntries((shows.shows ?? []).map((show) => [show.id, show.genres.map((genre) => genre.id)])));
+    this.said.setValue({});
     if (!genres.ok || !shows.ok) this.problem.setValue(genres.error || shows.error);
   }
 
@@ -120,7 +131,7 @@ export class Workspace extends Controller {
   answers() { return Object.keys(WORDS); }
 
   would(action, payload) {
-    if ([SAVES_PROFILE, CHOOSES_PHOTO, CHOOSES_SHOWS_PICTURE, REMOVES_SHOWS_PICTURE, CHOOSES_SHOW_PICTURE, SAVES_RECORDING, REMOVES_SHOW_PICTURE, SAVES_DESCRIPTION].includes(action) && this.busy.read()) return Phrase.of("Saving");
+    if ([SAVES_PROFILE, CHOOSES_PHOTO, CHOOSES_SHOWS_PICTURE, REMOVES_SHOWS_PICTURE, CHOOSES_SHOW_PICTURE, SAVES_RECORDING, REMOVES_SHOW_PICTURE, SAVES_SHOW].includes(action) && this.busy.read()) return Phrase.of("Saving");
     if (action === REMOVES_SHOWS_PICTURE && !this.showsPicture.read()) return Phrase.of("No default set");
     if (action === SAVES_PROFILE) {
       if (!this.name.read().trim()) return Phrase.of("Your DJ name, please");
@@ -134,11 +145,11 @@ export class Workspace extends Controller {
       if (show && link === show.recording) return Phrase.of("Nothing to save");
       if (link && !WEB_LINK.test(link)) return Phrase.of("A web link, please (https://...)");
     }
-    if (action === SAVES_DESCRIPTION) {
-      const words = (this.descriptions.read()[payload?.id] ?? "").trim();
+    if (action === SAVES_SHOW) {
       const show = this.shows.read().find((held) => held.id === payload?.id);
-      if (show && words === show.description) return Phrase.of("Nothing to save");
-      if (words.length > 2000) return Phrase.of("2000 characters at most");
+      if (show && !this.unsaved(show)) return Phrase.of("Nothing to save");
+      if (!(this.titles.read()[payload?.id] ?? "").trim()) return Phrase.of("The show needs a name");
+      if ((this.descriptions.read()[payload?.id] ?? "").trim().length > 2000) return Phrase.of("2000 characters at most");
     }
     if (action === REMOVES_SHOW_PICTURE && !this.shows.read().find((held) => held.id === payload?.id)?.picture) return Phrase.of("It has no picture of its own");
     return null;
@@ -152,18 +163,20 @@ export class Workspace extends Controller {
     if (action === SETS_LINKS) this.links.setValue(payload.line);
     if (action === TOGGLES_GENRE) this.genreIds.update((ids) => (ids.includes(payload.id) ? ids.filter((id) => id !== payload.id) : [...ids, payload.id]));
     if (action === SETS_DESCRIPTION) this.descriptions.update((all) => ({ ...all, [payload.id]: payload.line }));
-    if (action === SAVES_DESCRIPTION) {
-      const words = (this.descriptions.read()[payload.id] ?? "").trim();
-      this.change(() => this.studio.describeShow(payload.id, words), () => this.showChanged(payload.id, { description: words }, words ? "Description saved" : "Description cleared"));
-    }
+    if (action === SETS_SHOW_TITLE) this.titles.update((all) => ({ ...all, [payload.id]: payload.line }));
+    if (action === TOGGLES_SHOW_GENRE) this.showGenres.update((all) => {
+      const ids = all[payload.id] ?? [];
+      return { ...all, [payload.id]: ids.includes(payload.genre) ? ids.filter((id) => id !== payload.genre) : [...ids, payload.genre] };
+    });
+    if (action === SAVES_SHOW) this.saveShow(payload.id);
     if (action === SETS_RECORDING) this.drafts.update((drafts) => ({ ...drafts, [payload.id]: payload.line }));
     if (action === CHOOSES_PHOTO) return this.photo(payload.file);
     if (action === CHOOSES_SHOWS_PICTURE) return this.defaultPicture(payload.file);
-    if (action === REMOVES_SHOWS_PICTURE) this.setDefault(async () => { const saved = await this.studio.saveDj(this.dj.read().id, { show_picture_url: "" }); return saved.ok ? { ok: true, data: "" } : saved; }, "Default removed");
+    if (action === REMOVES_SHOWS_PICTURE) this.setDefault(async () => { const saved = await this.studio.saveDj(this.dj.read().id, { show_picture_url: "" }); return saved.ok ? { ok: true, data: "" } : saved; }, "✓ Default removed");
     if (action === CHOOSES_SHOW_PICTURE) return this.showPicture(payload.id, payload.file);
     if (action === SAVES_PROFILE) this.saveProfile();
     if (action === SAVES_RECORDING) this.saveRecording(payload.id);
-    if (action === REMOVES_SHOW_PICTURE) this.change(() => this.studio.updateShow(payload.id, { picture: "" }), () => this.showChanged(payload.id, { picture: "" }, "Picture removed"));
+    if (action === REMOVES_SHOW_PICTURE) this.change(() => this.studio.updateShow(payload.id, { picture: "" }), () => this.showChanged(payload.id, { picture: "" }, "✓ Picture removed: using the default"), payload.id);
     return null;
   }
 
@@ -179,7 +192,8 @@ export class Workspace extends Controller {
     }, (address) => {
       this.picture.setValue(address);
       this.dj.setValue({ ...dj, picture: address });
-      this.notice.setValue("Photo saved");
+      this.noticeAt.setValue("pictures");
+      this.notice.setValue("✓ Photo saved");
       this.changed();
     });
     return null;
@@ -194,7 +208,7 @@ export class Workspace extends Controller {
       if (!kept.ok) return kept;
       const saved = await this.studio.saveDj(dj.id, { show_picture_url: kept.data });
       return saved.ok ? kept : saved;
-    }, "Default picture saved: your shows without their own use it");
+    }, "✓ Default picture saved: your shows without their own use it");
     return null;
   }
 
@@ -202,6 +216,7 @@ export class Workspace extends Controller {
     this.change(work, (address) => {
       this.showsPicture.setValue(address);
       this.dj.update((dj) => ({ ...dj, showsPicture: address }));
+      this.noticeAt.setValue("pictures");
       this.notice.setValue(said);
       this.changed();
     });
@@ -225,7 +240,7 @@ export class Workspace extends Controller {
       if (!kept.ok) return kept;
       const saved = await this.studio.updateShow(id, { picture: kept.data });
       return saved.ok ? kept : saved;
-    }, (address) => this.showChanged(id, { picture: address }, "Show picture saved"));
+    }, (address) => this.showChanged(id, { picture: address }, "✓ Picture saved"), id);
     return null;
   }
 
@@ -234,30 +249,70 @@ export class Workspace extends Controller {
     const profile = { name: this.name.read().trim(), location: this.location.read().trim(), bio: this.bio.read().trim(), links: linksFrom(this.links.read()) };
     this.change(() => this.studio.saveDj(dj.id, profile, this.genreIds.read()), () => {
       this.dj.setValue({ ...dj, ...profile, genreIds: this.genreIds.read() });
-      this.notice.setValue("Profile saved");
+      this.noticeAt.setValue("profile");
+      this.notice.setValue("✓ Profile saved");
       this.changed();
     });
   }
 
   saveRecording(id) {
     const link = (this.drafts.read()[id] ?? "").trim();
-    this.change(() => this.studio.updateShow(id, { recording: link }), () => this.showChanged(id, { recording: link }, link ? "Recording saved" : "Recording removed"));
+    this.change(() => this.studio.updateShow(id, { recording: link }), () => this.showChanged(id, { recording: link }, link ? "✓ Recording saved" : "✓ Recording removed"), id);
+  }
+
+  /** Whether a show's name, genres or description have been changed here and not saved. */
+  unsaved(show) {
+    const title = (this.titles.read()[show.id] ?? show.title).trim();
+    const words = (this.descriptions.read()[show.id] ?? show.description).trim();
+    const genres = [...(this.showGenres.read()[show.id] ?? [])].sort().join();
+    return title !== show.title || words !== show.description || genres !== show.genres.map((genre) => genre.id).sort().join();
+  }
+
+  /** What to say beside a show: that changes wait to be saved, else what was last done to it. */
+  stateOf(show) {
+    if (!show) return null;
+    if (this.unsaved(show)) return { words: "Not saved yet: press Save show", bad: true };
+    return this.said.read()[show.id] ?? null;
+  }
+
+  /** A show's name, genres and description saved together. */
+  saveShow(id) {
+    const show = this.shows.read().find((held) => held.id === id);
+    if (!show) return;
+    const title = this.titles.read()[id].trim();
+    const genreIds = this.showGenres.read()[id] ?? [];
+    const words = (this.descriptions.read()[id] ?? "").trim();
+    this.change(async () => {
+      const named = await this.studio.nameShow(id, title, genreIds);
+      if (!named.ok || words === show.description) return named;
+      return this.studio.describeShow(id, words);
+    }, () => {
+      const genres = genreIds.map((genre) => this.genres.read().find((held) => held.id === genre) ?? show.genres.find((held) => held.id === genre)).filter(Boolean);
+      this.titles.update((all) => ({ ...all, [id]: title }));
+      this.descriptions.update((all) => ({ ...all, [id]: words }));
+      this.showChanged(id, { title, genres, description: words }, "✓ Saved");
+    }, id);
   }
 
   showChanged(id, changes, said) {
     this.shows.update((shows) => shows.map((show) => (show.id === id ? { ...show, ...changes } : show)));
-    this.notice.setValue(said);
+    this.said.update((all) => ({ ...all, [id]: { words: said, bad: false } }));
     this.changed();
   }
 
   /** A change sent; while it goes nothing else is sent, and what went wrong is said. */
-  async change(work, then) {
+  async change(work, then, show = null) {
     this.busy.setValue(true);
     this.problem.setValue("");
     const done = await work();
     if (this.disposed) return;
     this.busy.setValue(false);
-    if (!done.ok) { this.problem.setValue(done.error); return; }
+    if (!done.ok) {
+      // a show's trouble is said beside it, where the DJ is looking
+      if (show) this.said.update((all) => ({ ...all, [show]: { words: done.error, bad: true } }));
+      else this.problem.setValue(done.error);
+      return;
+    }
     then(done.data);
   }
 }
