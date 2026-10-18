@@ -5,7 +5,7 @@
 // opens their own; an admin opens any DJ's from the admin's DJs. What may be
 // saved is decided on the platform (backend.sql).
 
-import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=bf95e60b4ac9";
+import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=c1fc3176fb2f";
 
 export const SETS_NAME = "sets_the_dj_name";
 export const SETS_LOCATION = "sets_the_dj_location";
@@ -271,8 +271,11 @@ export class Workspace extends Controller {
   /** What to say beside a show: that changes wait to be saved, else what was last done to it. */
   stateOf(show) {
     if (!show) return null;
+    const said = this.said.read()[show.id] ?? null;
+    // a save that failed says why, first: else the DJ only sees it still unsaved, and can't tell what is wrong
+    if (said?.bad) return { words: this.unsaved(show) ? `Not saved: ${said.words}` : said.words, bad: true };
     if (this.unsaved(show)) return { words: "Not saved yet: press Save show", bad: true };
-    return this.said.read()[show.id] ?? null;
+    return said;
   }
 
   /** A show's name, genres and description saved together. */
@@ -282,6 +285,7 @@ export class Workspace extends Controller {
     const title = this.titles.read()[id].trim();
     const genreIds = this.showGenres.read()[id] ?? [];
     const words = (this.descriptions.read()[id] ?? "").trim();
+    this.said.update((all) => ({ ...all, [id]: null }));
     this.change(async () => {
       const named = await this.studio.nameShow(id, title, genreIds);
       if (!named.ok || words === show.description) return named;
