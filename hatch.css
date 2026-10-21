@@ -299,3 +299,11 @@ body::after {
 /* the listener chart: brand yellow columns on the raised ground */
 #app .chime-bars { padding: 1rem; background: var(--chime-raised); border: 1px solid var(--chime-edge); border-radius: var(--radius); font-family: var(--mono); }
 #app .chime-bars-label, #app .chime-bars-top { font-family: var(--mono); font-size: 0.65rem; }
+
+/* ---- the crew's handover countdown ---- */
+#app .Countdown { display: grid; justify-items: center; gap: 0.5rem; padding: 2rem 1rem; text-align: center; background: var(--chime-raised); border: 1px solid var(--chime-edge); border-radius: var(--radius); }
+#app .CountdownFigure { font-family: var(--mono); font-size: clamp(3.5rem, 16vw, 9rem); line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--chime-ink); }
+#app .Countdown:has(.CountdownNow:not(:empty)) .CountdownFigure { color: var(--chime-accent); }
+#app .CountdownNow { font-family: var(--display, inherit); font-size: clamp(1.6rem, 6vw, 2.6rem); text-transform: uppercase; color: var(--chime-accent); }
+#app .CountdownLabel { font-weight: 700; font-size: 1.15rem; }
+#app .CountdownClock { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.04em; color: var(--chime-ink-soft); }

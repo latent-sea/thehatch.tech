@@ -6,9 +6,9 @@
 // Signing in is with Google (backend/google.js): the platform sends no
 // email yet, so a code by email can't be offered.
 
-import { Backend } from "./backend/backend.js?v=c1fc3176fb2f";
-import { drawSignIn, takeGoogleRedirect } from "./backend/google.js?v=c1fc3176fb2f";
-import { shrinkPicture } from "./backend/pictures.js?v=c1fc3176fb2f";
+import { Backend } from "./backend/backend.js?v=3f0e10f717e0";
+import { drawSignIn, takeGoogleRedirect } from "./backend/google.js?v=3f0e10f717e0";
+import { shrinkPicture } from "./backend/pictures.js?v=3f0e10f717e0";
 
 // public: the platform's address and its publishable key belong in the page
 const PLATFORM = "https://api.latent-sea.com";
@@ -39,6 +39,11 @@ export function profileFrom(row) {
   return { id: row.id, name: row.name, bio: row.bio ?? "", location: row.location ?? "", picture: row.picture_url ?? "", showsPicture: row.show_picture_url ?? "",
     links: Array.isArray(row.links) ? row.links : [], resident: !!row.resident, userId: row.user_id ?? null,
     genreIds: (row.the_hatch_dj_genres ?? []).map((tag) => tag.genre_id) };
+}
+
+/** A time the platform gives, as milliseconds: to the millisecond, as every browser reads it. */
+export function momentOf(text) {
+  return text ? Date.parse(String(text).replace(/(\.\d{3})\d+/, "$1")) : null;
 }
 
 export function unreachable(reply) {
@@ -265,6 +270,38 @@ export class Studio {
   /** A show's description, written by one of its DJs or an admin ('' leaves it blank). */
   async describeShow(id, description) {
     return answer(await this.backend.callRpc("the_hatch_describe_my_show", { show_id: id, description }));
+  }
+
+  // --- the handover countdown, the crew's own ---
+
+  /** The countdown as it stands: { ends_at, label, started_by, started_at } (ends_at null when none runs), for the crew only. */
+  async countdown() {
+    const reply = await this.backend.select("the_hatch_countdown", "select=ends_at,label,started_by,started_at&id=eq.1");
+    return answer(reply, reply.ok ? (reply.data[0] ?? null) : null);
+  }
+
+  /** A countdown started: so many seconds from now by the platform's clock, or until a moment. */
+  async startCountdown({ seconds = null, until = null, label = "" }) {
+    return answer(await this.backend.callRpc("the_hatch_start_countdown", { seconds, until: until ? until.toISOString() : null, label }));
+  }
+
+  async stopCountdown() { return answer(await this.backend.callRpc("the_hatch_stop_countdown")); }
+
+  /** The platform's clock read once: { ok, server (ms), at (this device's clock, ms, at the midpoint of the ask), rtt (ms) }. */
+  async serverClock() {
+    const sent = performance.now();
+    const reply = await this.backend.callRpc("the_hatch_clock");
+    const back = performance.now();
+    if (!reply.ok) return { ok: false, error: unreachable(reply) };
+    return { ok: true, server: momentOf(reply.data), at: Date.now() - (back - sent) / 2, rtt: back - sent };
+  }
+
+  /** Told whenever the countdown changes, live: the channel, to leave. */
+  liveCountdown(changed) {
+    const live = this.backend.channel("the_hatch_countdown").onChanges("the_hatch_countdown");
+    live.on("changed", changed);
+    live.on("joined", changed); // found again once joined, in case it changed while away
+    return live.join();
   }
 
   // --- pictures for what is playing between shows ---

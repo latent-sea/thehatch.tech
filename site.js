@@ -13,23 +13,24 @@
 // studio.js): what is on air, what is next and the week ahead follow the
 // clock (schedule.js). Every time is UK time, the station's.
 
-import { ChimeApp, Chimes, Controller, Driver, Frames, Look, Phrase, Ui } from "./gd_chime/gd_chime.js?v=c1fc3176fb2f";
-import { Player } from "./player/player.js?v=c1fc3176fb2f";
-import { STATION } from "./content.js?v=c1fc3176fb2f";
-import { HATCH } from "./palette.js?v=c1fc3176fb2f";
-import { STREAM, Station, askHost, quietAudio } from "./station.js?v=c1fc3176fb2f";
-import { Schedule, dateOf, dayAt, dayId, dayName, djsOf, genresOf, slotOf, timeOf, weekdayOf } from "./schedule.js?v=c1fc3176fb2f";
-import { Studio } from "./studio.js?v=c1fc3176fb2f";
-import { Account, SIGNS_OUT } from "./account.js?v=c1fc3176fb2f";
-import * as Desk from "./desk.js?v=c1fc3176fb2f";
-import { Library } from "./library.js?v=c1fc3176fb2f";
-import * as Work from "./workspace.js?v=c1fc3176fb2f";
-import * as Djs from "./admin_djs.js?v=c1fc3176fb2f";
-import * as Mail from "./letters.js?v=c1fc3176fb2f";
-import * as Box from "./inbox.js?v=c1fc3176fb2f";
-import * as Keep from "./settings.js?v=c1fc3176fb2f";
-import { Listeners } from "./listeners.js?v=c1fc3176fb2f";
-import * as Tracks from "./track_pictures.js?v=c1fc3176fb2f";
+import { ChimeApp, Chimes, Controller, Driver, Frames, Look, Phrase, Ui } from "./gd_chime/gd_chime.js?v=3f0e10f717e0";
+import { Player } from "./player/player.js?v=3f0e10f717e0";
+import { STATION } from "./content.js?v=3f0e10f717e0";
+import { HATCH } from "./palette.js?v=3f0e10f717e0";
+import { STREAM, Station, askHost, quietAudio } from "./station.js?v=3f0e10f717e0";
+import { Schedule, dateOf, dayAt, dayId, dayName, djsOf, genresOf, slotOf, timeOf, weekdayOf } from "./schedule.js?v=3f0e10f717e0";
+import { Studio } from "./studio.js?v=3f0e10f717e0";
+import { Account, SIGNS_OUT } from "./account.js?v=3f0e10f717e0";
+import * as Desk from "./desk.js?v=3f0e10f717e0";
+import { Library } from "./library.js?v=3f0e10f717e0";
+import * as Work from "./workspace.js?v=3f0e10f717e0";
+import * as Djs from "./admin_djs.js?v=3f0e10f717e0";
+import * as Mail from "./letters.js?v=3f0e10f717e0";
+import * as Box from "./inbox.js?v=3f0e10f717e0";
+import * as Keep from "./settings.js?v=3f0e10f717e0";
+import { Listeners } from "./listeners.js?v=3f0e10f717e0";
+import * as Tracks from "./track_pictures.js?v=3f0e10f717e0";
+import * as Count from "./countdown.js?v=3f0e10f717e0";
 
 // the screens, by the address each is opened at
 const HOME = "home";
@@ -42,7 +43,9 @@ const ABOUT = "about";
 const CONTACT = "contact";
 const JOIN = "join";
 const ACCOUNT = "account";
-const SCREENS = [HOME, SCHEDULE, DJS, DJ, BROWSE, LISTEN, ABOUT, CONTACT, JOIN, ACCOUNT];
+const HANDOVER = "handover"; // the crew's handover countdown
+const GOES_HANDOVER = "goes_to_the_handover_countdown";
+const SCREENS = [HOME, SCHEDULE, DJS, DJ, BROWSE, LISTEN, ABOUT, CONTACT, JOIN, ACCOUNT, HANDOVER];
 
 const GOES_HOME = "goes_home";
 const GOES_SCHEDULE = "goes_to_schedule";
@@ -101,6 +104,8 @@ export class TheHatch extends ChimeApp {
       [ASKS_TO_DELETE]: ["Delete"],
       ...Desk.WORDS,
       ...Tracks.WORDS,
+      ...Count.WORDS,
+      [GOES_HANDOVER]: ["Handover countdown"],
     });
   }
 
@@ -127,6 +132,7 @@ export class TheHatch extends ChimeApp {
     this.inbox = this.model(new Box.Inbox(this.chimes, studio, djsChanged));
     this.words = this.model(new Keep.StationWords(this.chimes, studio));
     this.tracks = this.model(new Tracks.TrackPictures(this.chimes, studio)); // pictures for what is playing between shows
+    this.countdown = this.model(new Count.Countdown(this.chimes, studio)); // the crew's handover countdown
     this.heard = this.model(new Listeners(this.chimes, studio)); // the station's, for the admin
     this.myHeard = this.model(new Listeners(this.chimes, studio)); // the DJ open in the workspace's
     this.settings = this.model(new Keep.Settings(this.chimes, studio, () => { changed(); if (this.words.studio) this.words.load(); }));
@@ -141,7 +147,7 @@ export class TheHatch extends ChimeApp {
       media: ui.bound(() => ({ title: this.nowPlaying(), artist: this.showLine() || `${STATION.name} · Live`, artwork: this.showPicture() || LOGO })),
       ...(probing ? { audio: quietAudio(), session: null } : {}),
     }));
-    return ui.app("the_hatch", [this.header(), ui.stack([this.home(), this.scheduleScreen(), this.djsScreen(), this.djScreen(), this.browseScreen(), this.listenScreen(), this.about(), this.contactScreen(), this.joinScreen(), this.accountScreen()]), this.tabBar(), this.playerBar()]);
+    return ui.app("the_hatch", [this.header(), ui.stack([this.home(), this.scheduleScreen(), this.djsScreen(), this.djScreen(), this.browseScreen(), this.listenScreen(), this.about(), this.contactScreen(), this.joinScreen(), this.accountScreen(), this.handoverScreen()]), this.tabBar(), this.playerBar()]);
   }
 
   // --- what is on air, read where it is shown ---
@@ -159,7 +165,7 @@ export class TheHatch extends ChimeApp {
   showPicture() { const show = this.schedule.onAir(); return (show && this.pictureOf(show)) || this.tracks.pictureFor(this.station.nowPlaying.read()); }
 
   // loaded only when the page is walked (?probe), so an export leaves it out
-  probe() { return import("./probe.js?v=c1fc3176fb2f").then((made) => new made.Probe(this)); }
+  probe() { return import("./probe.js?v=3f0e10f717e0").then((made) => new made.Probe(this)); }
 
   /** The app mounted, then its address kept: #about opens About, and the address follows the reader. */
   mount(element) {
@@ -209,7 +215,9 @@ export class TheHatch extends ChimeApp {
     this.chimes.follow({ region: Chimes.GLOBAL }, "account", () => {
       const out = this.account.state.read() === "out" && this.driver.getTop().includes(ACCOUNT);
       const admin = this.account.admin.read();
+      const crew = this.account.state.read() === "in" && (admin || !!this.account.dj.read());
       Frames.defer(() => {
+        if (crew && this.countdown.studio) this.countdown.start();
         if (out && !drawn && this.account.studio) {
           const place = document.getElementById("google-button");
           if (place) { drawn = true; this.account.studio.drawGoogleButton(place, (credential, nonce) => this.account.signInWithGoogle(credential, nonce)).catch(() => { drawn = false; }); }
@@ -620,7 +628,7 @@ export class TheHatch extends ChimeApp {
       ui.when(ui.bound(() => account.state.read() === "in" && !account.admin.read() && account.dj.read()), ui.column([
         ui.row([
           ui.column([ui.text(Phrase.of("DJ workspace"), "Kicker"), ui.text(Phrase.of("My DJ page"), "PageTitle")], "PageHead").grow(),
-          ui.column([ui.text(account.name, "Quiet"), ui.button(SIGNS_OUT, { style: "SecondaryButton" })], "Who"),
+          ui.column([ui.text(account.name, "Quiet"), ui.button(SIGNS_OUT, { style: "SecondaryButton" }), this.handoverLink()], "Who"),
         ], "AdminHead"),
         this.workspaceView(),
       ], "Manager")),
@@ -635,6 +643,53 @@ export class TheHatch extends ChimeApp {
     ]);
   }
 
+  handoverLink() { return this.ui.pressable(GOES_HANDOVER, {}, [this.ui.text(Phrase.of("Handover countdown →"), "MoreWords")], "More").goesTo(HANDOVER); }
+
+  /**
+   * The crew's handover countdown: the station's DJs and admins only. One
+   * countdown, the same seconds on every screen; any of them starts it - for
+   * so long, or until a UK time - or stops it.
+   */
+  handoverScreen() {
+    const ui = this.ui;
+    const count = this.countdown;
+    const account = this.account;
+    const crew = ui.bound(() => account.state.read() === "in" && (account.admin.read() || !!account.dj.read()));
+    const quick = [1, 2, 5, 10].map((minutes) => ui.pressable(Count.CHOOSES_LENGTH, { minutes }, [ui.text(Phrase.with("%d min", [minutes]), "ChipWords")], "Chip")
+      .currentWhile(ui.bound(() => !count.until.read().trim() && Count.secondsIn(count.length.read()) === minutes * 60)));
+    return ui.screen(HANDOVER, [
+      ui.when(crew, ui.column([
+        ui.column([ui.text(Phrase.of("DJs and admins only"), "Kicker"), ui.text(Phrase.of("Handover"), "PageTitle")], "PageHead"),
+        ui.surface("Countdown", [
+          ui.text(ui.bound(() => count.label.read()), "CountdownLabel").wraps().hidesEmpty(),
+          ui.text(ui.bound(() => Count.shown(count.left.read())), "CountdownFigure"),
+          ui.text(ui.bound(() => (count.left.read() !== null && count.left.read() <= 0 ? Phrase.of("Hand over now") : null)), "CountdownNow").hidesEmpty(),
+          ui.text(ui.bound(() => count.about()), "Quiet").wraps(),
+          ui.text(ui.bound(() => (count.spread.read() === null ? Phrase.of("Setting the clock by the station's…") : Phrase.with("Timed by the station's clock, to within %d ms on this device.", [count.spread.read()]))), "CountdownClock"),
+        ]),
+        ui.surface("Form", [
+          ui.text(Phrase.of("Start a countdown"), "SectionTitle"),
+          ui.text(Phrase.of("Everyone on this page sees the same one. Starting a new one replaces any running."), "Quiet").wraps(),
+          ui.row(quick, "Chips"),
+          ui.row([
+            ui.field(Count.SETS_LENGTH, "", { label: Phrase.of("Minutes (or minutes:seconds)"), changes: Count.SETS_LENGTH, shows: count.length, placeholder: Phrase.of("5") }),
+            ui.field(Count.SETS_UNTIL, "", { label: Phrase.of("Or until (UK time)"), kind: "time", changes: Count.SETS_UNTIL, shows: count.until }),
+          ], "FormRow"),
+          ui.field(Count.SETS_LABEL, "", { label: Phrase.of("What for (optional)"), changes: Count.SETS_LABEL, shows: count.reason, placeholder: Phrase.of("Over to Mara") }),
+          ui.text(count.problem, "Problem").wraps().hidesEmpty(),
+          ui.row([
+            ui.button(Count.STARTS, { style: "PrimaryButton" }),
+            ui.button(Count.STOPS, { style: "SecondaryButton" }).absentWhenRefused(),
+          ], "Actions"),
+        ]),
+      ], "Manager"), ui.surface("SignInCard", [
+        ui.text(Phrase.of("Handover"), "PageTitle"),
+        ui.text(Phrase.of("For the station's DJs and admins. Sign in on your Account page, then come back."), "Lead").wraps(),
+        ui.pressable(GOES_ACCOUNT, {}, [ui.text(Phrase.of("Go to sign in →"), "MoreWords")], "More").goesTo(ACCOUNT),
+      ])),
+    ]);
+  }
+
   /** The admin's parts - the schedule, the DJs, a profile being edited - one at a time. */
   adminView() {
     const ui = this.ui;
@@ -645,7 +700,7 @@ export class TheHatch extends ChimeApp {
     return ui.column([
       ui.row([
         ui.column([ui.text(Phrase.of("Admin"), "Kicker"), ui.text(part.map((now) => ({ djs: Phrase.of("DJs"), inbox: Phrase.of("Inbox"), settings: Phrase.of("Station Settings"), workspace: Phrase.of("DJ profile"), pictures: Phrase.of("Now playing pictures"), dashboard: Phrase.of("Dashboard") })[now] ?? Phrase.of("Schedule Manager")), "PageTitle")], "PageHead").grow(),
-        ui.column([ui.text(this.account.name, "Quiet"), ui.button(SIGNS_OUT, { style: "SecondaryButton" })], "Who"),
+        ui.column([ui.text(this.account.name, "Quiet"), ui.button(SIGNS_OUT, { style: "SecondaryButton" }), this.handoverLink()], "Who"),
       ], "AdminHead"),
       ui.row([
         tab("dashboard", Phrase.of("Dashboard")),
