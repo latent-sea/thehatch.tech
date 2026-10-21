@@ -4,7 +4,7 @@
 // admin's and has a DJ profile. No one ever handles an account id: an
 // account that is neither is told to ask an admin to invite its email.
 
-import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=43903e6e00f2";
+import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=464e67785e1e";
 
 export const SIGNS_OUT = "signs_out";
 
