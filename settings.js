@@ -6,10 +6,10 @@
 // they first do), removed, never the last. Until
 // the platform answers, the words are content.js's.
 
-import { renew } from "./renew.js?v=3f0e10f717e0";
-import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=3f0e10f717e0";
-import { STATION } from "./content.js?v=3f0e10f717e0";
-import { EMAIL } from "./admin_djs.js?v=3f0e10f717e0";
+import { renew } from "./renew.js?v=43903e6e00f2";
+import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=43903e6e00f2";
+import { STATION } from "./content.js?v=43903e6e00f2";
+import { EMAIL } from "./admin_djs.js?v=43903e6e00f2";
 
 /** What visitors read: found once as the page opens, and again when an admin saves. */
 export class StationWords extends Controller {

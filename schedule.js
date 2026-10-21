@@ -3,8 +3,8 @@
 // every minute, so what is on air and what is next follow the clock. Every
 // time is UK time - the station's - whoever is reading.
 
-import { renew } from "./renew.js?v=3f0e10f717e0";
-import { Controller } from "./gd_chime/gd_chime.js?v=3f0e10f717e0";
+import { renew } from "./renew.js?v=43903e6e00f2";
+import { Controller } from "./gd_chime/gd_chime.js?v=43903e6e00f2";
 
 /** How many days ahead the schedule shows, today included. */
 export const DAYS = 7;
