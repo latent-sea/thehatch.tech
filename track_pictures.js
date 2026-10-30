@@ -4,8 +4,8 @@
 // ignoring case; when more than one match, the longest words win. A show's
 // own picture, while it is on air, comes first (site.js, showPicture).
 
-import { renew } from "./renew.js?v=464e67785e1e";
-import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=464e67785e1e";
+import { renew } from "./renew.js?v=838107ab2734";
+import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=838107ab2734";
 
 export const SETS_WORDS = "sets_the_track_words";
 export const CHOOSES_PICTURE = "chooses_a_track_picture";
