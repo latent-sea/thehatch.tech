@@ -6,8 +6,8 @@
 // It always rings when set, even to an equal value: an array or an object
 // may have been changed in place.
 
-import { Bound } from "./bound.js?v=e89300a3aeb8";
-import { Reads } from "./reads.js?v=e89300a3aeb8";
+import { Bound } from "./bound.js?v=1658ddc6f7e1";
+import { Reads } from "./reads.js?v=1658ddc6f7e1";
 
 export class Value extends Bound {
   constructor(bell, initial) {

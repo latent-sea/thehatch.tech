@@ -7,7 +7,7 @@
 // "connections" - the same answer that says what is playing, so nothing
 // more is asked of the host.
 
-import { Controller } from "./gd_chime/gd_chime.js?v=e89300a3aeb8";
+import { Controller } from "./gd_chime/gd_chime.js?v=1658ddc6f7e1";
 
 /** The live stream: the one the station broadcasts on. */
 export const STREAM = "https://s1.citrus3.com:8236/stream";
