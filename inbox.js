@@ -3,8 +3,8 @@
 // from Join Us, each approved - which adds the applicant to the DJs - or
 // declined.
 
-import { renew } from "./renew.js?v=1658ddc6f7e1";
-import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=1658ddc6f7e1";
+import { renew } from "./renew.js?v=d231d576e90f";
+import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=d231d576e90f";
 
 export const MARKS_READ = "marks_a_message_read";
 export const MARKS_UNREAD = "marks_a_message_unread";
