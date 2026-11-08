@@ -3,7 +3,7 @@
 // pixels. Its longest side is brought down to that, as a JPEG; a picture
 // already small enough, or one that moves (a GIF), goes as it is.
 //
-//     import { shrinkPicture } from "./backend/pictures.js?v=d231d576e90f";
+//     import { shrinkPicture } from "./backend/pictures.js?v=ceada8cd6350";
 //     const reply = await backend.uploadPicture("dj.jpg", await shrinkPicture(file));
 
 /** The picture, its longest side at most longest pixels, as a JPEG Blob; a GIF, or one already small, unchanged. */
@@ -34,8 +34,8 @@ async function decoded(file) {
     const address = URL.createObjectURL(file);
     try {
       const image = new Image();
-      image.src = address;
-      await image.decode();
+      // loaded, as a page shows it - decode() refuses some large photos an <img> shows
+      await new Promise((loaded, failed) => { image.onload = loaded; image.onerror = () => failed(refused); image.src = address; });
       return { width: image.naturalWidth, height: image.naturalHeight, image, close() {} };
     } catch {
       throw refused;

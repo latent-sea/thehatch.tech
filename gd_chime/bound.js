@@ -17,7 +17,7 @@
 // the item's value being copied into a description, which would go stale
 // with nobody told, and is reported.
 
-import { Reads } from "./reads.js?v=d231d576e90f";
+import { Reads } from "./reads.js?v=ceada8cd6350";
 
 export class Bound {
   constructor(read, answerer = null) {
