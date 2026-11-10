@@ -7,9 +7,9 @@
 // reaches every open page at once (live), and is found again every quarter
 // minute and on coming back into sight besides.
 
-import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=f52ee8dbebbb";
-import { momentOf } from "./studio.js?v=f52ee8dbebbb";
-import { ukParts, ukTime, timeOf } from "./schedule.js?v=f52ee8dbebbb";
+import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=da145a9c9aa1";
+import { momentOf } from "./studio.js?v=da145a9c9aa1";
+import { ukParts, ukTime, timeOf } from "./schedule.js?v=da145a9c9aa1";
 
 export const SETS_LENGTH = "sets_the_countdown_length";
 export const CHOOSES_LENGTH = "chooses_a_countdown_length";

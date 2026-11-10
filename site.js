@@ -13,26 +13,26 @@
 // studio.js): what is on air, what is next and the week ahead follow the
 // clock (schedule.js). Every time is UK time, the station's.
 
-import { ChimeApp, Chimes, Controller, Driver, Frames, Look, Phrase, Ui } from "./gd_chime/gd_chime.js?v=f52ee8dbebbb";
-import { Player } from "./player/player.js?v=f52ee8dbebbb";
-import { STATION } from "./content.js?v=f52ee8dbebbb";
-import { HATCH } from "./palette.js?v=f52ee8dbebbb";
-import { STREAM, Station, askHost, quietAudio } from "./station.js?v=f52ee8dbebbb";
-import { Schedule, dateOf, dayAt, dayId, dayName, djsOf, genresOf, slotOf, timeOf, weekdayOf } from "./schedule.js?v=f52ee8dbebbb";
-import { Studio } from "./studio.js?v=f52ee8dbebbb";
-import * as Acc from "./account.js?v=f52ee8dbebbb";
-import { Account, SIGNS_OUT } from "./account.js?v=f52ee8dbebbb";
-import * as Desk from "./desk.js?v=f52ee8dbebbb";
-import { Library } from "./library.js?v=f52ee8dbebbb";
-import * as Work from "./workspace.js?v=f52ee8dbebbb";
-import * as Djs from "./admin_djs.js?v=f52ee8dbebbb";
-import * as Mail from "./letters.js?v=f52ee8dbebbb";
-import * as Box from "./inbox.js?v=f52ee8dbebbb";
-import * as Keep from "./settings.js?v=f52ee8dbebbb";
-import { Listeners } from "./listeners.js?v=f52ee8dbebbb";
-import * as Tracks from "./track_pictures.js?v=f52ee8dbebbb";
-import * as Count from "./countdown.js?v=f52ee8dbebbb";
-import { relayGoogleAnswer } from "./backend/google.js?v=f52ee8dbebbb";
+import { ChimeApp, Chimes, Controller, Driver, Frames, Look, Phrase, Ui } from "./gd_chime/gd_chime.js?v=da145a9c9aa1";
+import { Player } from "./player/player.js?v=da145a9c9aa1";
+import { STATION } from "./content.js?v=da145a9c9aa1";
+import { HATCH } from "./palette.js?v=da145a9c9aa1";
+import { STREAM, Station, askHost, quietAudio } from "./station.js?v=da145a9c9aa1";
+import { Schedule, dateOf, dayAt, dayId, dayName, djsOf, genresOf, slotOf, timeOf, weekdayOf } from "./schedule.js?v=da145a9c9aa1";
+import { SENDER, Studio } from "./studio.js?v=da145a9c9aa1";
+import * as Acc from "./account.js?v=da145a9c9aa1";
+import { Account, SIGNS_OUT } from "./account.js?v=da145a9c9aa1";
+import * as Desk from "./desk.js?v=da145a9c9aa1";
+import { Library } from "./library.js?v=da145a9c9aa1";
+import * as Work from "./workspace.js?v=da145a9c9aa1";
+import * as Djs from "./admin_djs.js?v=da145a9c9aa1";
+import * as Mail from "./letters.js?v=da145a9c9aa1";
+import * as Box from "./inbox.js?v=da145a9c9aa1";
+import * as Keep from "./settings.js?v=da145a9c9aa1";
+import { Listeners } from "./listeners.js?v=da145a9c9aa1";
+import * as Tracks from "./track_pictures.js?v=da145a9c9aa1";
+import * as Count from "./countdown.js?v=da145a9c9aa1";
+import { relayGoogleAnswer } from "./backend/google.js?v=da145a9c9aa1";
 
 // Google sends people back from signing in on a phone only to the addresses its client lists; this one is,
 // and Tapestry, on the same site, signs in through it: its answer is handed straight on, before anything here
@@ -172,7 +172,7 @@ export class TheHatch extends ChimeApp {
   showPicture() { const show = this.schedule.onAir(); return (show && this.pictureOf(show)) || this.tracks.pictureFor(this.station.nowPlaying.read()); }
 
   // loaded only when the page is walked (?probe), so an export leaves it out
-  probe() { return import("./probe.js?v=f52ee8dbebbb").then((made) => new made.Probe(this)); }
+  probe() { return import("./probe.js?v=da145a9c9aa1").then((made) => new made.Probe(this)); }
 
   /** The app mounted, then its address kept: #about opens About, and the address follows the reader. */
   mount(element) {
@@ -632,11 +632,11 @@ export class TheHatch extends ChimeApp {
         ui.surface("GoogleButton", []).named("google-button"),
         // or by email, any address: a code sent to it, typed here - the same account as Google's for the same address
         ui.when(account.codeSentTo.map((to) => !to), ui.column([
-          ui.text(Phrase.of("Or sign in with any email address: we email you a code."), "Quiet").wraps(),
+          ui.text(Phrase.with("Or sign in with any email address: we email you a code, from %s.", [SENDER]), "Quiet").wraps(),
           ui.field(Acc.SENDS_CODE, "", { changes: Acc.SETS_EMAIL, shows: account.typed, kind: "email", autocomplete: "email", placeholder: Phrase.of("you@example.com") }),
           ui.button(Acc.SENDS_CODE, { style: "SecondaryButton" }),
         ], "EmailSignIn"), ui.column([
-          ui.text(account.codeSentTo.map((to) => Phrase.with("A code is on its way to %s. It works for 10 minutes: check your spam if it hasn't come.", [to])), "Lead").wraps(),
+          ui.text(account.codeSentTo.map((to) => Phrase.with("A code is on its way to %s, from %s, with the subject \"Your sign-in code for The Hatch\". It works for 10 minutes: check your spam if it hasn't come.", [to, SENDER])), "Lead").wraps(),
           ui.field(Acc.SIGNS_IN_WITH_CODE, "", { changes: Acc.SETS_CODE, shows: account.code, autocomplete: "one-time-code", placeholder: Phrase.of("The code from the email") }),
           ui.row([ui.button(Acc.SIGNS_IN_WITH_CODE, { style: "PrimaryButton" }), ui.button(Acc.OTHER_EMAIL, { style: "SecondaryButton" })], "Actions"),
         ], "EmailSignIn")),

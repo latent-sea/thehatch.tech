@@ -4,16 +4,18 @@
 // throws; what a visitor may see or change is decided on the platform.
 //
 // Signing in is with Google (backend/google.js), or with a code the
-// platform emails to any address.
+// platform emails to any address, from SENDER.
 
-import { Backend } from "./backend/backend.js?v=f52ee8dbebbb";
-import { drawSignIn, takeGoogleRedirect } from "./backend/google.js?v=f52ee8dbebbb";
-import { shrinkPicture } from "./backend/pictures.js?v=f52ee8dbebbb";
+import { Backend } from "./backend/backend.js?v=da145a9c9aa1";
+import { drawSignIn, takeGoogleRedirect } from "./backend/google.js?v=da145a9c9aa1";
+import { shrinkPicture } from "./backend/pictures.js?v=da145a9c9aa1";
 
 // public: the platform's address and its publishable key belong in the page
 const PLATFORM = "https://api.latent-sea.com";
 const KEY = "sb_publishable_BqVtSYE4ysOb2sHMuFSwMk_HrTAUgLx";
 // public: the Google client the platform accepts (platform/supabase/platform.yml)
+// the codes' sender, as the platform names this site's (platform/sql/mail.sql)
+export const SENDER = "The Hatch <sign_in@mail.latent-sea.com>";
 const GOOGLE_CLIENT = "400837578052-jqnhh565es3a92k58u5r2oggdcf7mrkr.apps.googleusercontent.com";
 
 /** A show as the page holds it: its times as Dates. */
@@ -194,7 +196,7 @@ export class Studio {
   async signInWithGoogle(credential, nonce) { return answer(await this.backend.signInWithGoogleToken(credential, nonce)); }
 
   /** A sign-in code (ten digits) emailed to this address, by the platform. */
-  async requestCode(email) { return answer(await this.backend.requestCode(email)); }
+  async requestCode(email) { return answer(await this.backend.requestCode(email, "", location.origin + location.pathname)); }
 
   /** The emailed code signs in: the same account as Google's, for the same address. */
   async verifyCode(email, code) { return answer(await this.backend.verifyCode(email, code)); }
