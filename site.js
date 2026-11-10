@@ -13,25 +13,26 @@
 // studio.js): what is on air, what is next and the week ahead follow the
 // clock (schedule.js). Every time is UK time, the station's.
 
-import { ChimeApp, Chimes, Controller, Driver, Frames, Look, Phrase, Ui } from "./gd_chime/gd_chime.js?v=ceada8cd6350";
-import { Player } from "./player/player.js?v=ceada8cd6350";
-import { STATION } from "./content.js?v=ceada8cd6350";
-import { HATCH } from "./palette.js?v=ceada8cd6350";
-import { STREAM, Station, askHost, quietAudio } from "./station.js?v=ceada8cd6350";
-import { Schedule, dateOf, dayAt, dayId, dayName, djsOf, genresOf, slotOf, timeOf, weekdayOf } from "./schedule.js?v=ceada8cd6350";
-import { Studio } from "./studio.js?v=ceada8cd6350";
-import { Account, SIGNS_OUT } from "./account.js?v=ceada8cd6350";
-import * as Desk from "./desk.js?v=ceada8cd6350";
-import { Library } from "./library.js?v=ceada8cd6350";
-import * as Work from "./workspace.js?v=ceada8cd6350";
-import * as Djs from "./admin_djs.js?v=ceada8cd6350";
-import * as Mail from "./letters.js?v=ceada8cd6350";
-import * as Box from "./inbox.js?v=ceada8cd6350";
-import * as Keep from "./settings.js?v=ceada8cd6350";
-import { Listeners } from "./listeners.js?v=ceada8cd6350";
-import * as Tracks from "./track_pictures.js?v=ceada8cd6350";
-import * as Count from "./countdown.js?v=ceada8cd6350";
-import { relayGoogleAnswer } from "./backend/google.js?v=ceada8cd6350";
+import { ChimeApp, Chimes, Controller, Driver, Frames, Look, Phrase, Ui } from "./gd_chime/gd_chime.js?v=f52ee8dbebbb";
+import { Player } from "./player/player.js?v=f52ee8dbebbb";
+import { STATION } from "./content.js?v=f52ee8dbebbb";
+import { HATCH } from "./palette.js?v=f52ee8dbebbb";
+import { STREAM, Station, askHost, quietAudio } from "./station.js?v=f52ee8dbebbb";
+import { Schedule, dateOf, dayAt, dayId, dayName, djsOf, genresOf, slotOf, timeOf, weekdayOf } from "./schedule.js?v=f52ee8dbebbb";
+import { Studio } from "./studio.js?v=f52ee8dbebbb";
+import * as Acc from "./account.js?v=f52ee8dbebbb";
+import { Account, SIGNS_OUT } from "./account.js?v=f52ee8dbebbb";
+import * as Desk from "./desk.js?v=f52ee8dbebbb";
+import { Library } from "./library.js?v=f52ee8dbebbb";
+import * as Work from "./workspace.js?v=f52ee8dbebbb";
+import * as Djs from "./admin_djs.js?v=f52ee8dbebbb";
+import * as Mail from "./letters.js?v=f52ee8dbebbb";
+import * as Box from "./inbox.js?v=f52ee8dbebbb";
+import * as Keep from "./settings.js?v=f52ee8dbebbb";
+import { Listeners } from "./listeners.js?v=f52ee8dbebbb";
+import * as Tracks from "./track_pictures.js?v=f52ee8dbebbb";
+import * as Count from "./countdown.js?v=f52ee8dbebbb";
+import { relayGoogleAnswer } from "./backend/google.js?v=f52ee8dbebbb";
 
 // Google sends people back from signing in on a phone only to the addresses its client lists; this one is,
 // and Tapestry, on the same site, signs in through it: its answer is handed straight on, before anything here
@@ -106,7 +107,7 @@ export class TheHatch extends ChimeApp {
       ...Djs.WORDS,
       [RELOADS]: ["Try again"],
       [GOES_ACCOUNT]: ["Sign in"],
-      [SIGNS_OUT]: ["Sign out"],
+      ...Acc.WORDS,
       [ASKS_TO_DELETE]: ["Delete"],
       ...Desk.WORDS,
       ...Tracks.WORDS,
@@ -171,7 +172,7 @@ export class TheHatch extends ChimeApp {
   showPicture() { const show = this.schedule.onAir(); return (show && this.pictureOf(show)) || this.tracks.pictureFor(this.station.nowPlaying.read()); }
 
   // loaded only when the page is walked (?probe), so an export leaves it out
-  probe() { return import("./probe.js?v=ceada8cd6350").then((made) => new made.Probe(this)); }
+  probe() { return import("./probe.js?v=f52ee8dbebbb").then((made) => new made.Probe(this)); }
 
   /** The app mounted, then its address kept: #about opens About, and the address follows the reader. */
   mount(element) {
@@ -629,6 +630,16 @@ export class TheHatch extends ChimeApp {
         ui.text(Phrase.of("Sign in"), "PageTitle"),
         ui.text(Phrase.of("For the station's admins and DJs. Listening is free and needs no account."), "Lead").wraps(),
         ui.surface("GoogleButton", []).named("google-button"),
+        // or by email, any address: a code sent to it, typed here - the same account as Google's for the same address
+        ui.when(account.codeSentTo.map((to) => !to), ui.column([
+          ui.text(Phrase.of("Or sign in with any email address: we email you a code."), "Quiet").wraps(),
+          ui.field(Acc.SENDS_CODE, "", { changes: Acc.SETS_EMAIL, shows: account.typed, kind: "email", autocomplete: "email", placeholder: Phrase.of("you@example.com") }),
+          ui.button(Acc.SENDS_CODE, { style: "SecondaryButton" }),
+        ], "EmailSignIn"), ui.column([
+          ui.text(account.codeSentTo.map((to) => Phrase.with("A code is on its way to %s. It works for 10 minutes: check your spam if it hasn't come.", [to])), "Lead").wraps(),
+          ui.field(Acc.SIGNS_IN_WITH_CODE, "", { changes: Acc.SETS_CODE, shows: account.code, autocomplete: "one-time-code", placeholder: Phrase.of("The code from the email") }),
+          ui.row([ui.button(Acc.SIGNS_IN_WITH_CODE, { style: "PrimaryButton" }), ui.button(Acc.OTHER_EMAIL, { style: "SecondaryButton" })], "Actions"),
+        ], "EmailSignIn")),
         ui.text(account.problem, "Problem").wraps().hidesEmpty(),
       ])),
       ui.when(ui.bound(() => account.state.read() === "in" && !account.admin.read() && account.dj.read()), ui.column([
@@ -789,8 +800,8 @@ export class TheHatch extends ChimeApp {
         ui.text(ui.bound(() => {
           const sign = djs.signIn(dj.read()?.id);
           if (sign.state === "in") return Phrase.with("Signed in as %s: they can edit their own page.", [sign.email]);
-          if (sign.state === "invited") return Phrase.with("Invited as %s: they get their page when they first sign in with Google.", [sign.email]);
-          return Phrase.of("No sign-in email yet: add the one they use with Google so they can edit their own page.");
+          if (sign.state === "invited") return Phrase.with("Invited as %s: they get their page when they first sign in with it.", [sign.email]);
+          return Phrase.of("No sign-in email yet: add the one they sign in with so they can edit their own page.");
         }), "Quiet").wraps(),
         ui.when(ui.bound(() => djs.signIn(dj.read()?.id).state === "in"),
           ui.row([ui.button(Djs.UNLINKS_ACCOUNT, { payload: dj.map((held) => ({ id: held?.id })), style: "SecondaryButton" })], "DjAdminRow"),
@@ -942,7 +953,7 @@ export class TheHatch extends ChimeApp {
       ui.text(settings.problem, "Problem").wraps().hidesEmpty(),
       ui.surface("Form", [
         ui.text(Phrase.of("Admins"), "SectionTitle"),
-        ui.text(Phrase.of("They run the station: the schedule, the DJs, the inbox and these settings. Add someone by the email they sign in with Google; they see the admin screens when they sign in."), "Quiet").wraps(),
+        ui.text(Phrase.of("They run the station: the schedule, the DJs, the inbox and these settings. Add someone by the email they sign in with (Google or a code by email); they see the admin screens when they sign in."), "Quiet").wraps(),
         ui.each(settings.admins, (admin) => ui.row([
           ui.column([
             ui.text(admin.map((held) => held?.name || held?.email || ""), "ShowTitle"),

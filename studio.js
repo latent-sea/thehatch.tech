@@ -3,12 +3,12 @@
 // tooling/install_site.py). Every answer is { ok, ..., error } and nothing
 // throws; what a visitor may see or change is decided on the platform.
 //
-// Signing in is with Google (backend/google.js): the platform sends no
-// email yet, so a code by email can't be offered.
+// Signing in is with Google (backend/google.js), or with a code the
+// platform emails to any address.
 
-import { Backend } from "./backend/backend.js?v=ceada8cd6350";
-import { drawSignIn, takeGoogleRedirect } from "./backend/google.js?v=ceada8cd6350";
-import { shrinkPicture } from "./backend/pictures.js?v=ceada8cd6350";
+import { Backend } from "./backend/backend.js?v=f52ee8dbebbb";
+import { drawSignIn, takeGoogleRedirect } from "./backend/google.js?v=f52ee8dbebbb";
+import { shrinkPicture } from "./backend/pictures.js?v=f52ee8dbebbb";
 
 // public: the platform's address and its publishable key belong in the page
 const PLATFORM = "https://api.latent-sea.com";
@@ -192,6 +192,12 @@ export class Studio {
   googleAnswer() { return takeGoogleRedirect(); }
 
   async signInWithGoogle(credential, nonce) { return answer(await this.backend.signInWithGoogleToken(credential, nonce)); }
+
+  /** A sign-in code (ten digits) emailed to this address, by the platform. */
+  async requestCode(email) { return answer(await this.backend.requestCode(email)); }
+
+  /** The emailed code signs in: the same account as Google's, for the same address. */
+  async verifyCode(email, code) { return answer(await this.backend.verifyCode(email, code)); }
 
   async signOut() { await this.backend.signOut(); }
 

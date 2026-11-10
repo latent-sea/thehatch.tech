@@ -1,11 +1,11 @@
 // The admin's DJs: every DJ on the station's list, added by name, made
 // resident or not, invited by the email address they sign in with - when
-// they sign in with Google, the platform matches the email and gives them
+// they sign in (Google, or a code by email), the platform matches the email and gives them
 // their page (the_hatch_claim) - or taken off the list. Their profiles are
 // edited in the same workspace a DJ uses for their own (workspace.js).
 
-import { renew } from "./renew.js?v=ceada8cd6350";
-import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=ceada8cd6350";
+import { renew } from "./renew.js?v=f52ee8dbebbb";
+import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=f52ee8dbebbb";
 
 export const ADDS_NEW_DJ = "adds_a_new_dj";
 export const TOGGLES_RESIDENT = "toggles_resident";
@@ -92,7 +92,7 @@ export class AdminDjs extends Controller {
       this.typed.delete(dj.id);
       this.change(() => this.studio.inviteDj(dj.id, email), (linked) => {
         if (!email) return `${dj.name}'s invite taken back`;
-        return linked ? `${dj.name} is linked: they've signed in with ${email} before` : `Saved: when ${dj.name} signs in with Google as ${email}, they get their page`;
+        return linked ? `${dj.name} is linked: they've signed in with ${email} before` : `Saved: when ${dj.name} signs in as ${email}, they get their page`;
       });
     }
     if (action === UNLINKS_ACCOUNT && dj) this.change(() => this.studio.unlinkDj(dj.id), () => `${dj.name}'s sign-in unlinked`);

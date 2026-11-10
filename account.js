@@ -1,12 +1,28 @@
-// Who is signed in, and whether they run the station: signing in with Google
-// (studio.js), then taking up whatever an admin invited their email to - a
+// Who is signed in, and whether they run the station: signing in with Google,
+// or with a code emailed to any address (studio.js), then taking up whatever an admin invited their email to - a
 // DJ profile, admin (the_hatch_claim) - and asking whether the account is an
 // admin's and has a DJ profile. No one ever handles an account id: an
 // account that is neither is told to ask an admin to invite its email.
 
-import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=ceada8cd6350";
+import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=f52ee8dbebbb";
 
 export const SIGNS_OUT = "signs_out";
+export const SETS_EMAIL = "sets_the_email_to_sign_in_with";
+export const SENDS_CODE = "emails_me_a_code";
+export const SETS_CODE = "sets_the_emailed_code";
+export const SIGNS_IN_WITH_CODE = "signs_in_with_the_code";
+export const OTHER_EMAIL = "uses_another_email";
+
+export const WORDS = {
+  [SIGNS_OUT]: ["Sign out"],
+  [SETS_EMAIL]: ["Your email"],
+  [SENDS_CODE]: ["Email me a code"],
+  [SETS_CODE]: ["The code"],
+  [SIGNS_IN_WITH_CODE]: ["Sign in"],
+  [OTHER_EMAIL]: ["Use another email"],
+};
+
+const ADDRESS = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 export class Account extends Controller {
   /** Through the studio, or none: the page walked by its probe, told who is signed in instead. */
@@ -20,6 +36,10 @@ export class Account extends Controller {
     this.admin = this.value(false);
     this.dj = this.value(null); // the account's DJ profile, or null
     this.problem = this.value("");
+    this.typed = this.value(""); // the email typed to sign in with
+    this.code = this.value("");
+    this.codeSentTo = this.value(""); // where a code was emailed, while it's waited for
+    this.busy = this.value(false);
     // a guest - a visitor who sent a message - is not signed in, as far as anyone can see
     // back from Google on a phone: its answer signs in; else whoever was signed in before
     const google = studio ? this.studio.googleAnswer() : null;
@@ -30,11 +50,22 @@ export class Account extends Controller {
     }
   }
 
-  answers() { return [SIGNS_OUT]; }
+  answers() { return Object.keys(WORDS); }
 
-  would(action) { return action === SIGNS_OUT && this.state.read() !== "in" ? Phrase.of("Not signed in") : null; }
+  would(action) {
+    if (action === SIGNS_OUT && this.state.read() !== "in") return Phrase.of("Not signed in");
+    if ((action === SENDS_CODE || action === SIGNS_IN_WITH_CODE) && this.busy.read()) return Phrase.of("Just a moment");
+    if (action === SENDS_CODE && !ADDRESS.test(this.typed.read().trim())) return Phrase.of("Type your email address");
+    if (action === SIGNS_IN_WITH_CODE && !/^\d{6,10}$/.test(this.code.read().replace(/\s/g, ""))) return Phrase.of("Type the code from the email");
+    return null;
+  }
 
-  told(action) {
+  told(action, payload) {
+    if (action === SETS_EMAIL) this.typed.setValue(payload.line);
+    if (action === SETS_CODE) this.code.setValue(payload.line);
+    if (action === SENDS_CODE) this.sendCode();
+    if (action === SIGNS_IN_WITH_CODE) this.signInWithCode();
+    if (action === OTHER_EMAIL) { this.codeSentTo.setValue(""); this.code.setValue(""); this.problem.setValue(""); }
     if (action === SIGNS_OUT) {
       this.studio?.signOut();
       this.became({ state: "out", name: "", id: "", email: "", admin: false, dj: null });
@@ -47,6 +78,30 @@ export class Account extends Controller {
     this.problem.setValue("");
     const signed = await this.studio.signInWithGoogle(credential, nonce);
     if (!signed.ok) { this.problem.setValue(signed.error); return; }
+    await this.signedIn();
+  }
+
+  /** A sign-in code emailed to the address typed: the same account as Google's, where it is the same address. */
+  async sendCode() {
+    const email = this.typed.read().trim().toLowerCase();
+    this.problem.setValue("");
+    this.busy.setValue(true);
+    const sent = await this.studio.requestCode(email);
+    this.busy.setValue(false);
+    if (!sent.ok) { this.problem.setValue(sent.error); return; }
+    this.code.setValue("");
+    this.codeSentTo.setValue(email);
+  }
+
+  /** The emailed code typed: signed in. */
+  async signInWithCode() {
+    this.problem.setValue("");
+    this.busy.setValue(true);
+    const signed = await this.studio.verifyCode(this.codeSentTo.read(), this.code.read().replace(/\s/g, ""));
+    this.busy.setValue(false);
+    if (!signed.ok) { this.problem.setValue(/expired|invalid|token/i.test(signed.error ?? "") ? "That code isn't right, or has run out: check the email, or ask for another." : signed.error); return; }
+    this.codeSentTo.setValue("");
+    this.code.setValue("");
     await this.signedIn();
   }
 

@@ -202,6 +202,8 @@ body::after {
 #app .GoogleButton { padding: 0; min-height: 44px; background: transparent; color-scheme: light; }
 /* on a phone: a plain button to Google and back in the same tab (backend/google.js) */
 #app .GoogleButton .google-redirect { min-height: 44px; padding: 0 1.4rem; border: 1px solid #dadce0; border-radius: 999px; background: #fff; color: #1f1f1f; font: 600 0.95rem/1 var(--chime-font, inherit); cursor: pointer; }
+/* or by email: a code sent to any address */
+#app .EmailSignIn { gap: 0.6rem; align-self: stretch; padding-top: 0.9rem; border-top: 1px solid var(--chime-edge); }
 #app .Manager { gap: 0.9rem; }
 #app .AdminHead { gap: 1rem; align-items: flex-end; flex-wrap: wrap; }
 #app .Who { gap: 0.4rem; align-items: flex-end; }

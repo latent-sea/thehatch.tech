@@ -6,10 +6,10 @@
 // they first do), removed, never the last. Until
 // the platform answers, the words are content.js's.
 
-import { renew } from "./renew.js?v=ceada8cd6350";
-import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=ceada8cd6350";
-import { STATION } from "./content.js?v=ceada8cd6350";
-import { EMAIL } from "./admin_djs.js?v=ceada8cd6350";
+import { renew } from "./renew.js?v=f52ee8dbebbb";
+import { Controller, Phrase } from "./gd_chime/gd_chime.js?v=f52ee8dbebbb";
+import { STATION } from "./content.js?v=f52ee8dbebbb";
+import { EMAIL } from "./admin_djs.js?v=f52ee8dbebbb";
 
 /** What visitors read: found once as the page opens, and again when an admin saves. */
 export class StationWords extends Controller {
@@ -142,7 +142,7 @@ export class Settings extends Controller {
     if (action === ADDS_ADMIN) {
       const email = this.adminEmail.read().trim().toLowerCase();
       this.change(async () => { const made = await this.studio.inviteAdmin(email); if (made.ok) this.adminEmail.setValue(""); return made; },
-        (now) => (now ? `${email} is an admin: they see the admin screens next time they open the site` : `${email} invited: they become an admin when they first sign in with Google`));
+        (now) => (now ? `${email} is an admin: they see the admin screens next time they open the site` : `${email} invited: they become an admin when they first sign in with that email`));
     }
     if (action === REMOVES_ADMIN) {
       const admin = this.admins.read().find((held) => held.email === payload.email);
